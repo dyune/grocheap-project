@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from models import (
     initialize_db,
     create_item,
@@ -7,9 +7,37 @@ from models import (
     update_item,
     delete_item,
 )
+from pydantic import BaseModel
+import os
+
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (use specific domains in production)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
+# Define the path to the text file
+TEXT_FILE_PATH = "input_data.txt"
+
+# Define the input model
+class InputText(BaseModel):
+    text: str
+
+@app.post("/write-text/")
+async def write_text(input_text: InputText):
+    try:
+        # Write the input text to the file
+        with open(TEXT_FILE_PATH, "a") as file:  # Use "a" to append
+            file.write(f"{input_text.text}\n")
+        return {"message": "Text written successfully!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Initialize the database
 @app.on_event("startup")
