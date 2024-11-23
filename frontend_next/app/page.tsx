@@ -1,9 +1,14 @@
-import Image from "next/image";
-
-export default function Home() {
+function MyButton({ title }: { title: string }) {
   return (
-    <>
-      Hi chat
-    </>
+    <button>{title}</button>
+  );
+}
+
+export default function MyApp() {
+  return (
+    <div>
+      <h1>Welcome to my app</h1>
+      <MyButton title="I'm a button" />
+    </div>
   );
 }
