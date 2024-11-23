@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 from models import (
     initialize_db, create_item, fetch_all_items, fetch_item_by_id, update_item, delete_item,
     create_store, fetch_all_stores, create_price, fetch_prices_by_item, fetch_latest_price, update_price, delete_price
@@ -72,11 +72,9 @@ async def remove_item(item_id: int):
     await delete_item(item_id)
     return {"message": "Item deleted"}
 
-<<<<<<< HEAD
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
-=======
 
 # Store Endpoints
 @app.post("/stores/")
@@ -124,4 +122,3 @@ async def edit_price(price_id: int, price: PriceUpdateRequest):
 async def remove_price(price_id: int):
     await delete_price(price_id)
     return {"message": "Price deleted"}
->>>>>>> branchDW
