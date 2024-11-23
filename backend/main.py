@@ -1,10 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-from models import (
-    initialize_db, create_item, fetch_all_items, fetch_item_by_id, update_item, delete_item,
-    create_store, fetch_all_stores, create_price, fetch_prices_by_item, fetch_latest_price, update_price, delete_price
-)
+
+from models import *
 
 app = FastAPI()
 
@@ -119,3 +117,13 @@ async def edit_price(price_id: int, price: PriceUpdateRequest):
 async def remove_price(price_id: int):
     await delete_price(price_id)
     return {"message": "Price deleted"}
+
+
+# Search for items by name, brand, category, or keywords.
+@app.get("/items/search/")
+async def search_items_endpoint(query: str):
+    items = await search_items(query)
+    if not items:
+        raise HTTPException(status_code=404, detail="No items found matching your search")
+    return items
+

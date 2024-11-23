@@ -172,3 +172,18 @@ async def delete_price(price_id):
         await db.commit()
 
 
+SEARCH_ITEMS = """
+SELECT * FROM items
+WHERE (name || ' ' || brand || ' ' || category || ' ' || keywords) LIKE ?
+"""
+
+
+async def search_items(query: str):
+    query_like = f"%{query}%"
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        cursor = await db.execute(SEARCH_ITEMS, (query_like,))
+        rows = await cursor.fetchall()
+        return [
+            {"id": row[0], "name": row[1], "brand": row[2], "category": row[3], "keywords": row[4]}
+            for row in rows
+        ]
