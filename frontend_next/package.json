@@ -11,6 +11,7 @@
   "dependencies": {
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "frontend_next": "file:",
     "lucide-react": "^0.460.0",
     "next": "^15.0.3",
     "react": "^19.0.0-rc-fb9a90fa48-20240614",
