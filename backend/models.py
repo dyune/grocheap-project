@@ -172,18 +172,45 @@ async def delete_price(price_id):
         await db.commit()
 
 
-SEARCH_ITEMS = """
-SELECT * FROM items
-WHERE (name || ' ' || brand || ' ' || category || ' ' || keywords) LIKE ?
+SEARCH_ITEMS_WITH_PRICES = """
+SELECT 
+    i.id, 
+    i.name, 
+    i.brand, 
+    i.category, 
+    i.keywords, 
+    GROUP_CONCAT(p.price) AS prices, 
+    GROUP_CONCAT(s.name) AS store_names
+FROM items i
+INNER JOIN prices p ON i.id = p.item_id
+INNER JOIN stores s ON p.store_id = s.id
+WHERE 
+    i.name LIKE ? OR 
+    i.brand LIKE ? OR 
+    i.category LIKE ? OR 
+    i.keywords LIKE ?
+GROUP BY i.id, i.name, i.brand, i.category, i.keywords
+
 """
 
 
 async def search_items(query: str):
-    query_like = f"%{query}%"
+    """Search for items associated with stores and prices."""
+    query_like = f"%{query}%"  # Add wildcards for partial matching
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        cursor = await db.execute(SEARCH_ITEMS, (query_like,))
+        cursor = await db.execute(SEARCH_ITEMS_WITH_PRICES, (query_like, query_like, query_like, query_like))
         rows = await cursor.fetchall()
         return [
-            {"id": row[0], "name": row[1], "brand": row[2], "category": row[3], "keywords": row[4]}
+            {
+                "id": row[0],
+                "name": row[1],
+                "brand": row[2],
+                "category": row[3],
+                "keywords": row[4],
+                "prices": row[5].split(",") if row[5] else [],  # Split aggregated prices into a list
+                "store_names": row[6].split(",") if row[6] else []  # Split aggregated store names into a list
+            }
             for row in rows
         ]
+
+
