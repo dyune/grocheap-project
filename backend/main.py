@@ -19,20 +19,22 @@ app.add_middleware(
 # Define the path to the text file
 TEXT_FILE_PATH = "input_data.txt"
 
+# deniz wrote this
 # Define the input model
-class InputText(BaseModel):
-    text: str
+# class InputText(BaseModel):
+#     text: str
+#
 
-
-@app.post("/write-text/")
-async def write_text(input_text: InputText):
-    try:
-        # Write the input text to the file
-        with open(TEXT_FILE_PATH, "a") as file:  # Use "a" to append
-            file.write(f"{input_text.text}\n")
-        return {"message": "Text written successfully!"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.post("/write-text/")
+# async def write_text(input_text: InputText):
+#     try:
+#         # Write the input text to the file
+#         with open(TEXT_FILE_PATH, "a") as file:  # Use "a" to append
+#             file.write(f"{input_text.text}\n")
+#         return {"message": "Text written successfully!"}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+#
 
 
 @app.on_event("startup")

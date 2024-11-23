@@ -3,15 +3,23 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {Badge} from "@/components/ui/badge";
+import { ScrollArea } from "@radix-ui/react-scroll-area";
 
 export default function Page() {
   const [searchText, setSearchText] = useState("");
   const [products, setProducts] = useState([]);
 
+  function capitalizeFirstLetter(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+
   // Fetch products from the backend
   const fetchProducts = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/items/");
+      const balls = " balls"
+      const response = await fetch(`"http://127.0.0.1:8000/items/${balls}`);
       if (response.ok) {
         const data = await response.json();
         setProducts(data);
@@ -30,25 +38,33 @@ export default function Page() {
     if (!searchText) return;
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/write-text/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: searchText }),
-      });
+      const response = await fetch(
+          `http://127.0.0.1:8000/items/search/?query=${encodeURIComponent(searchText)}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+      );
 
-      if (response.ok) {
-        alert("Search text saved successfully!");
+      if (response.status === 200) {
+        const data = await response.json();
         setSearchText("");
+        setProducts(data); // Directly set the fetched data
+        console.log(data);
+      } else if (response.status === 404) {
+        alert("No items found.");
+        setProducts([]); // Clear the product list
       } else {
-        alert("Failed to save search text.");
+        alert("Failed to search for items.");
       }
     } catch (error) {
       alert("Failed to connect to the server.");
       console.error(error);
     }
   };
+
 
   // Handle Fetch Prices button
   const handleFetchPrices = async () => {
@@ -95,31 +111,45 @@ export default function Page() {
           onChange={(e) => setSearchText(e.target.value)}
           className="w-full rounded-md border border-card-border bg-card text-foreground px-4 py-2 mb-4"
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" variant="outline">
           Search
         </Button>
       </form>
 
       {/* Display Products (Scrollable List) */}
-      <div className="max-w-4xl mx-auto mt-6">
-        <div className="max-h-96 overflow-y-auto p-4 border border-card-border rounded-lg bg-card">
-          {products.length > 0 ? (
-            products.map((product: { id: number; name: string; brand: string; category: string }) => (
-              <Card key={product.id} className="mb-4">
-                <CardHeader>
-                  <CardTitle>{product.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>Brand: {product.brand}</p>
-                  <p>Category: {product.category}</p>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <p className="text-center text-foreground">No products available.</p>
-          )}
+      {/* eslint-disable-next-line react/jsx-no-undef */}
+      <ScrollArea>
+        <div className="max-w-2xl mx-auto mt-6">
+          <div className="max-h-96 overflow-y-auto p-4 border border-card-border rounded-lg bg-card">
+            {products.length > 0 ? (
+                products.map((product: {
+                  id: number;
+                  name: string;
+                  brand: string;
+                  category: string;
+                  store_names: string[];
+                  prices: string[]
+                }) => (
+                    <Card key={product.id} className="mb-4">
+                      <CardHeader>
+                        <CardTitle>{product.brand + " " + product.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Badge>{capitalizeFirstLetter(product.category)}</Badge>
+                        {product.store_names.map((store, index) => (
+                            <div key={`${store}-${index}`}>
+                              Price at {store}: {product.prices[index]}$
+                            </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                ))
+            ) : (
+                <p className="text-center text-foreground">No products found.</p>
+            )}
+          </div>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }
