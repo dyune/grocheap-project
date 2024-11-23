@@ -170,3 +170,5 @@ async def delete_price(price_id):
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute(DELETE_PRICE, (price_id,))
         await db.commit()
+
+
