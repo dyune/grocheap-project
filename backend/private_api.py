@@ -1,3 +1,4 @@
+from scraper import update_prices, scrape_iga, scrape_super_c, scrape_maxi
 from fastapi import FastAPI, HTTPException
 from models import *
 
@@ -15,7 +16,6 @@ async def start_stores():
     return {"status": "ok"}
 
 
-from scraper import update_prices, scrape_iga, scrape_super_c, scrape_maxi
 
 @app.get("/scrape/{store_name}")
 async def scrape_store(store_name: str):
