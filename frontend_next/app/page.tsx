@@ -8,10 +8,16 @@ export default function Page() {
   const [searchText, setSearchText] = useState("");
   const [products, setProducts] = useState([]);
 
+  function capitalizeFirstLetter(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+
   // Fetch products from the backend
   const fetchProducts = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/items/");
+      const balls = " balls"
+      const response = await fetch(`"http://127.0.0.1:8000/items/${balls}`);
       if (response.ok) {
         const data = await response.json();
         setProducts(data);
@@ -30,25 +36,33 @@ export default function Page() {
     if (!searchText) return;
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/write-text/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: searchText }),
-      });
+      const response = await fetch(
+          `http://127.0.0.1:8000/items/search/?query=${encodeURIComponent(searchText)}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+      );
 
-      if (response.ok) {
-        alert("Search text saved successfully!");
+      if (response.status === 200) {
+        const data = await response.json();
         setSearchText("");
+        setProducts(data); // Directly set the fetched data
+        console.log(data);
+      } else if (response.status === 404) {
+        alert("No items found.");
+        setProducts([]); // Clear the product list
       } else {
-        alert("Failed to save search text.");
+        alert("Failed to search for items.");
       }
     } catch (error) {
       alert("Failed to connect to the server.");
       console.error(error);
     }
   };
+
 
   // Handle Fetch Prices button
   const handleFetchPrices = async () => {
@@ -101,22 +115,26 @@ export default function Page() {
       </form>
 
       {/* Display Products (Scrollable List) */}
-      <div className="max-w-4xl mx-auto mt-6">
+      <div className="max-w-2xl mx-auto mt-6">
         <div className="max-h-96 overflow-y-auto p-4 border border-card-border rounded-lg bg-card">
           {products.length > 0 ? (
-            products.map((product: { id: number; name: string; brand: string; category: string }) => (
+            products.map((product: { id: number; name: string; brand: string; category: string; store_names: string[]; prices: string[] }) => (
               <Card key={product.id} className="mb-4">
                 <CardHeader>
-                  <CardTitle>{product.name}</CardTitle>
+                  <CardTitle>{product.brand + " " + product.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p>Brand: {product.brand}</p>
-                  <p>Category: {product.category}</p>
+                  <p>{capitalizeFirstLetter(product.category)}</p>
+                  {product.store_names.map((store, index) => (
+                      <div key={`${store}-${index}`}>
+                        Price at {store}: {product.prices[index]}$
+                      </div>
+                  ))}
                 </CardContent>
               </Card>
             ))
           ) : (
-            <p className="text-center text-foreground">No products available.</p>
+            <p className="text-center text-foreground">No products found.</p>
           )}
         </div>
       </div>
