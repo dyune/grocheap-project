@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {Badge} from "@/components/ui/badge";
+import { ScrollArea } from "@radix-ui/react-scroll-area";
 
 export default function Page() {
   const [searchText, setSearchText] = useState("");
@@ -109,35 +111,45 @@ export default function Page() {
           onChange={(e) => setSearchText(e.target.value)}
           className="w-full rounded-md border border-card-border bg-card text-foreground px-4 py-2 mb-4"
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" variant="outline">
           Search
         </Button>
       </form>
 
       {/* Display Products (Scrollable List) */}
-      <div className="max-w-2xl mx-auto mt-6">
-        <div className="max-h-96 overflow-y-auto p-4 border border-card-border rounded-lg bg-card">
-          {products.length > 0 ? (
-            products.map((product: { id: number; name: string; brand: string; category: string; store_names: string[]; prices: string[] }) => (
-              <Card key={product.id} className="mb-4">
-                <CardHeader>
-                  <CardTitle>{product.brand + " " + product.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>{capitalizeFirstLetter(product.category)}</p>
-                  {product.store_names.map((store, index) => (
-                      <div key={`${store}-${index}`}>
-                        Price at {store}: {product.prices[index]}$
-                      </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <p className="text-center text-foreground">No products found.</p>
-          )}
+      {/* eslint-disable-next-line react/jsx-no-undef */}
+      <ScrollArea>
+        <div className="max-w-2xl mx-auto mt-6">
+          <div className="max-h-96 overflow-y-auto p-4 border border-card-border rounded-lg bg-card">
+            {products.length > 0 ? (
+                products.map((product: {
+                  id: number;
+                  name: string;
+                  brand: string;
+                  category: string;
+                  store_names: string[];
+                  prices: string[]
+                }) => (
+                    <Card key={product.id} className="mb-4">
+                      <CardHeader>
+                        <CardTitle>{product.brand + " " + product.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Badge>{capitalizeFirstLetter(product.category)}</Badge>
+                        {product.store_names.map((store, index) => (
+                            <div key={`${store}-${index}`}>
+                              Price at {store}: {product.prices[index]}$
+                            </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                ))
+            ) : (
+                <p className="text-center text-foreground">No products found.</p>
+            )}
+          </div>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }
