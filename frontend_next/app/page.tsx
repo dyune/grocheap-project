@@ -2,32 +2,32 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { Alert } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Page() {
   const [searchText, setSearchText] = useState("");
   const [products, setProducts] = useState([]);
+  const [error, setError] = useState("");
 
-  function capitalizeFirstLetter(str: string) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
+  const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
   // Fetch products from the backend
   const fetchProducts = async () => {
+    setError(""); // Clear any existing error
     try {
-      const balls = " balls"
-      const response = await fetch(`"http://127.0.0.1:8000/items/${balls}`);
+      const response = await fetch("http://127.0.0.1:8000/items/");
       if (response.ok) {
         const data = await response.json();
         setProducts(data);
       } else {
-        alert("Failed to fetch products from the backend.");
+        setError("Failed to fetch products from the backend.");
       }
     } catch (error) {
-      alert("An error occurred while fetching products.");
+      setError("An error occurred while fetching products.");
       console.error(error);
     }
   };
@@ -35,39 +35,39 @@ export default function Page() {
   // Handle search submission
   const handleSearch = async (event: React.FormEvent) => {
     event.preventDefault();
+    setError(""); // Clear any existing error
     if (!searchText) return;
 
     try {
       const response = await fetch(
-          `http://127.0.0.1:8000/items/search/?query=${encodeURIComponent(searchText)}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+        `http://127.0.0.1:8000/items/search/?query=${encodeURIComponent(searchText)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status === 200) {
         const data = await response.json();
         setSearchText("");
-        setProducts(data); // Directly set the fetched data
-        console.log(data);
+        setProducts(data);
       } else if (response.status === 404) {
-        alert("No items found.");
-        setProducts([]); // Clear the product list
+        setError("No items found.");
+        setProducts([]);
       } else {
-        alert("Failed to search for items.");
+        setError("Failed to search for items.");
       }
     } catch (error) {
-      alert("Failed to connect to the server.");
+      setError("Failed to connect to the server.");
       console.error(error);
     }
   };
 
-
   // Handle Fetch Prices button
   const handleFetchPrices = async () => {
+    setError(""); // Clear any existing error
     try {
       const response = await fetch("http://127.0.0.1:8000/fetch-prices/", {
         method: "POST",
@@ -77,10 +77,10 @@ export default function Page() {
         alert("Prices fetched and updated successfully!");
         fetchProducts(); // Refresh the product list
       } else {
-        alert("Failed to fetch prices.");
+        setError("Failed to fetch prices.");
       }
     } catch (error) {
-      alert("Failed to connect to the server.");
+      setError("Failed to connect to the server.");
       console.error(error);
     }
   };
@@ -94,61 +94,70 @@ export default function Page() {
     <div className="relative min-h-screen bg-background text-foreground p-8">
       {/* Top-right Fetch Prices Button */}
       <div className="absolute top-4 right-4">
-        <Button onClick={handleFetchPrices} className="bg-button hover:bg-button-hover">
+        <Button onClick={handleFetchPrices} className="bg-amber-600 hover:bg-amber-700 text-white">
           Fetch Prices
         </Button>
       </div>
 
       {/* App Title */}
-      <h1 className="text-4xl font-bold mb-6 text-center">GroCheap</h1>
+      <h1 className="text-4xl font-bold mb-6 text-center text-amber-600">GroCheap</h1>
 
       {/* Search Section */}
       <form onSubmit={handleSearch} className="w-full max-w-md mx-auto mb-6">
-        <input
+        <Input
           type="text"
           placeholder="Search for products..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="w-full rounded-md border border-card-border bg-card text-foreground px-4 py-2 mb-4"
+          className="mb-4"
         />
-        <Button type="submit" variant="outline">
+        <Button type="submit" className="w-full bg-amber-600 hover:bg-amber-700 text-white">
           Search
         </Button>
       </form>
 
-      {/* Display Products (Scrollable List) */}
-      {/* eslint-disable-next-line react/jsx-no-undef */}
-      <ScrollArea>
-        <div className="max-w-2xl mx-auto mt-6">
-          <div className="max-h-96 overflow-y-auto p-4 border border-card-border rounded-lg bg-card">
-            {products.length > 0 ? (
-                products.map((product: {
-                  id: number;
-                  name: string;
-                  brand: string;
-                  category: string;
-                  store_names: string[];
-                  prices: string[]
-                }) => (
-                    <Card key={product.id} className="mb-4">
-                      <CardHeader>
-                        <CardTitle>{product.brand + " " + product.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Badge>{capitalizeFirstLetter(product.category)}</Badge>
-                        {product.store_names.map((store, index) => (
-                            <div key={`${store}-${index}`}>
-                              Price at {store}: {product.prices[index]}$
-                            </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                ))
-            ) : (
-                <p className="text-center text-foreground">No products found.</p>
-            )}
-          </div>
-        </div>
+      {/* Error Message */}
+      {error && (
+        <Alert className="mb-6" variant="destructive">
+          {error}
+        </Alert>
+      )}
+
+      {/* Display Products (Accordion View) */}
+      <ScrollArea className="max-w-2xl mx-auto">
+        <Accordion type="single" collapsible>
+          {products.length > 0 ? (
+            products.map(
+              (product: {
+                id: number;
+                name: string;
+                brand: string;
+                category: string;
+                store_names?: string[];
+                prices?: string[];
+              }) => (
+                <AccordionItem key={product.id} value={`product-${product.id}`}>
+                  <AccordionTrigger>
+                    {`${product.brand} ${product.name}`}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <Badge className="bg-amber-300 text-black">
+                      {capitalizeFirstLetter(product.category)}
+                    </Badge>
+                    {(product.store_names || []).map((store, index) => (
+                      <div key={`${store}-${index}`} className="mt-2">
+                        <span className="text-amber-500">Price at {store}: </span>
+                        <span className="text-amber-700">${product.prices?.[index] || "N/A"}</span>
+                      </div>
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
+              )
+            )
+          ) : (
+            <p className="text-center text-foreground mt-4">No products found.</p>
+          )}
+        </Accordion>
       </ScrollArea>
     </div>
   );
