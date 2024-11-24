@@ -4,8 +4,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
-from backend.models import create_item, initialize_db  # Ensure correct import
+from models import create_item, initialize_db  # Ensure correct import
 import time
+from selenium.webdriver.chrome.options import Options
+
+# Configure Chrome for headless mode
+chrome_options = Options()
+chrome_options.add_argument("--headless=new")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--window-size=1920,1080")
 
 # URLs of the SuperC pages
 DEMO_URLS = [
@@ -19,7 +26,7 @@ async def save_product_to_db(name, brand, link, image_url, size, store, price):
     """Save product details to the database."""
     try:
         await create_item(name, brand, link, image_url, size, store, price)
-        print(f"Saved: {name} from {store}")
+        print(f"Saved: {name} from {store} at ${price}")
     except Exception as e:
         print(f"Failed to save {name}: {e}")
 
@@ -99,7 +106,7 @@ def first_layer_parsing(url, driver):
 async def update_superc():
     """Update SuperC products."""
     await initialize_db()  # Ensure the database is initialized
-    driver = webdriver.Chrome()  # Set up the WebDriver
+    driver = webdriver.Chrome(options=chrome_options)  # Set up the WebDriver
 
     all_tasks = []
     try:

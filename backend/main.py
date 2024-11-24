@@ -1,6 +1,10 @@
 from typing import Optional, List
-
+import asyncio
 from fastapi import FastAPI, HTTPException, Body
+
+from iga_scraper import update_iga
+from maxi_scraper import update_maxi
+from superc_scraper import update_superc
 from models import *
 from pydantic import BaseModel
 
@@ -88,3 +92,26 @@ async def search_items_endpoint(query: str):
     if not items:
         raise HTTPException(status_code=404, detail="No items found matching your search")
     return items
+
+
+@app.get("/refresh_db")
+async def refresh_db():
+    """
+    Endpoint to refresh the database by running scrapers.
+    """
+    try:
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute("DELETE FROM items;")  # Clear the items table
+            await db.commit()
+            print("Tables cleared successfully.")
+    except Exception as e:
+        raise Exception(f"Failed to clear tables: {e}")
+
+    try:
+        await update_maxi()
+        await update_superc()
+        await update_iga()
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { LandingPage } from "./LandingPage";
+import React, { useState, useEffect } from "react";
+import { LandingPage } from "@/components/LandingPage";
 import { MainUI } from "./MainUI";
 import {
   Menubar,
@@ -87,8 +87,9 @@ export default function Page() {
   const handleFetchPrices = async () => {
     setError("");
     try {
-      const response = await fetch("http://127.0.0.1:8000/fetch-prices/", {
-        method: "POST",
+      setLoading(true)
+      const response = await fetch("http://127.0.0.1:8000/refresh_db", {
+        method: "GET",
       });
 
       if (response.ok) {
@@ -100,6 +101,9 @@ export default function Page() {
     } catch (error) {
       setError("Failed to connect to the server.");
       console.error(error);
+    }
+    finally {
+      setLoading(false)
     }
   };
 
@@ -127,7 +131,7 @@ export default function Page() {
                   setSearchText={setSearchText}
                   handleSearch={handleSearch}
                   handleFetchPrices={handleFetchPrices}
-                  products={products}
+                  initProducts={products}
                   error={error}
               />
           )}
