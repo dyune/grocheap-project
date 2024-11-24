@@ -47,14 +47,19 @@ async def initialize_db():
 
 
 # Item Functions
-async def create_item(name, brand, link, image_url=None, size=None, store=None, price=None):
-    """Insert a new item with price."""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        cursor = await db.execute(
-            INSERT_ITEM, (name, brand, link, image_url, size, store, price)
-        )
-        await db.commit()
-        return cursor.lastrowid
+async def create_item(name, brand, link, image_url, size, store, price):
+    """Insert a new item into the database."""
+    try:
+        print(f"Attempting to save: {name}, {brand}, {link}, {image_url}, {size}, {store}, {price}")
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            await db.execute(
+                "INSERT OR IGNORE INTO items (name, brand, link, image_url, size, store, price) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (name, brand, link, image_url, size, store, price),
+            )
+            await db.commit()
+            print(f"Saved: {name}")
+    except Exception as e:
+        print(f"Error saving item {name}: {e}")
 
 
 async def fetch_all_items():

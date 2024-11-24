@@ -57,8 +57,8 @@ def first_layer_parsing(url, driver):
     tasks = []  # To store asyncio tasks
     for product in products:
         # Extract data for each product
-        brand = product.get("data-product-brand", "Brand not found")
-        name = product.get("data-product-name", "Name not found")
+        brand = product.get("data-product-brand", "No brand")
+        name = product.get("data-product-name", None)
 
         url_tag = product.find("a", class_="product-details-link")
         product_url = "https://www.superc.ca" + url_tag.get("href") if url_tag else "URL not found"
