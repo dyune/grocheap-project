@@ -16,9 +16,6 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# Define the path to the text file
-TEXT_FILE_PATH = "input_data.txt"
-
 # deniz wrote this
 # Define the input model
 # class InputText(BaseModel):
