@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {ProductImage} from "@/components/ProductImage";
 
 export function MainUI({
                            searchText,
@@ -100,18 +101,7 @@ export function MainUI({
                         products.map((product: any) => (
                             <Card key={product.id} className="shadow-lg border rounded-lg flex flex-col justify-center items-center">
                                 {/* Image or Placeholder */}
-                                {product.image_url ? (
-                                    <img
-                                        src={product.image_url}
-                                        alt={product.name}
-                                        className="w-full h-40 object-cover rounded-t-lg"
-                                    />
-                                ) : (
-                                    <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-t-lg">
-                                        <span className="text-gray-400 text-sm">Image Unavailable</span>
-                                    </div>
-                                )}
-
+                                <ProductImage src={product.image_url} />
                                 {/* Card Content */}
                                 <CardContent className="p-4 flex-grow">
                                     <h3 className="text-lg font-semibold text-center">
