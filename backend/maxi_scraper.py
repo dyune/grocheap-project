@@ -4,7 +4,7 @@ import re
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support import expected_conditions as ec
 from bs4 import BeautifulSoup
 from backend.models import create_item, initialize_db  # Ensure correct import
 
@@ -34,7 +34,7 @@ def first_layer_parsing(url):
     # Wait for the content to load
     try:
         WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "chakra-linkbox__overlay"))
+            ec.presence_of_element_located((By.CLASS_NAME, "chakra-linkbox__overlay"))
         )
         print("Content loaded successfully.")
     except Exception as e:
