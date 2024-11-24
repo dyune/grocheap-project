@@ -1,34 +1,49 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { FaDatabase, FaSearch } from "react-icons/fa";
-import { Separator } from "@/components/ui/separator";
-import { AccordiongSubScroller } from "@/components/AccordionSubScroller";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import React from "react";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export function MainUI({
                            searchText,
                            setSearchText,
                            handleSearch,
                            handleFetchPrices,
-                           products,
+                           initProducts,
                            error,
                        }: any) {
-    const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+    const [products, setProducts] = useState(initProducts || []);
+
+    function sortProductsByPrice(order: string) {
+        const sortedProducts = [...products].sort((a, b) => {
+            const priceA = parseFloat(a.price || "0");
+            const priceB = parseFloat(b.price || "0");
+
+            return order === "asc" ? priceA - priceB : priceB - priceA;
+        });
+        setProducts(sortedProducts); // Update the state
+    }
 
     return (
         <>
-            {/* App Title */}
             <h1 className="text-5xl font-bold mt-8 mb-6 text-center text-amber-600">GroCheap</h1>
 
-            {/* Search Section */}
-            <form onSubmit={handleSearch} className="w-full max-w-md mx-auto mb-6 rounded-2xl">
+            <form onSubmit={handleSearch} className="w-full max-w-lg mx-auto mb-6 rounded-2xl">
                 <Input
                     type="text"
                     placeholder="Search for products..."
@@ -37,26 +52,38 @@ export function MainUI({
                     className="mb-4"
                 />
 
-                {/* Buttons Section */}
-                <div className="flex justify-center space-x-4">
+                <div className="max-w-screen flex justify-center items-center space-x-3">
                     <Button
                         text="Search"
                         icon={<FaSearch />}
                         type="submit"
-                        className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-2xl flex items-center gap-2"
+                        className="bg-amber-600 hover:bg-amber-700 text-white px-1 py-2 rounded-full flex items-center gap-2 min-w-[100px]"
                     />
                     <Button
-                        text="Fetch Latest Prices"
+                        text="Fetch Prices"
                         icon={<FaDatabase />}
                         onClick={handleFetchPrices}
-                        className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-2xl flex items-center gap-2"
+                        className="bg-amber-600 hover:bg-amber-700 text-white px-1 rounded-full flex items-center gap-2 min-w-[180px]"
                     />
+                    <Select onValueChange={(value) => sortProductsByPrice(value)}>
+                        <SelectTrigger
+                            className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-full flex items-center gap-2 max-w-[100px]"
+                        >
+                            <SelectValue placeholder="Sort" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectLabel className="text-gray-500">Order</SelectLabel>
+                                <SelectItem value="dsc">Most expensive</SelectItem>
+                                <SelectItem value="asc">Least expensive</SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
                 </div>
             </form>
 
-            {/* Error Message */}
             {error && (
-                <div className="flex justify-center items-center">
+                <div className="flex justify-center items-center my-10">
                     <Alert className="w-[300px] border-red-500 border bg-white shadow-md rounded-md">
                         <div className="flex items-center">
                             <AlertTitle className="text-red-500 font-semibold">Uh-oh!</AlertTitle>
@@ -66,62 +93,57 @@ export function MainUI({
                 </div>
             )}
 
-            <Separator className="my-4" orientation="horizontal" />
-
-            {/* Display Products (Accordion View) */}
             <ScrollArea className="max-w-2xl mx-auto">
                 <ScrollBar orientation="vertical" />
-                <Accordion type="single" collapsible>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {products.length > 0 ? (
-                        products.map(
-                            (product: {
-                                id: number;
-                                name: string;
-                                brand: string;
-                                link: string;
-                                image_url?: string;
-                                size?: string;
-                                store?: string;
-                                price?: string;
-                            }) => (
-                                 <AccordionItem key={product.id} value={`product-${product.id}`}>
-                                    <AccordionTrigger>
-                                        <div className="flex justify-between items-center w-full px-2">
-                                            <span>{`${product.brand || "No Brand"} ${product.name}`}</span>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                        <Card>
-                                            <CardTitle><Badge className="text-lg bg-red-300">{`${product.store} ${product.price + "$"}`}</Badge></CardTitle>
-                                            <CardContent>
-                                            {product.image_url && (
-                                                <div>
-                                                    <img src={product.image_url} alt={product.name} className="w-32 h-32 object-cover rounded-md" />
-                                                </div>
-                                            )}
-                                                <div className="p-4 space-y-2">
-                                                    {/* Product Details */}
-                                                    <div>
-                                                        <span className="font-bold"></span>
-                                                        {product.size?.toUpperCase() || "N/A"}
-                                                    </div>
-                                                    <div>
-                                                            <a href={product.link} className="font-black underline">
-                                                                View product
-                                                            </a>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            )
-                        )
+                        products.map((product: any) => (
+                            <Card key={product.id} className="shadow-lg border rounded-lg flex flex-col justify-center items-center">
+                                {/* Image or Placeholder */}
+                                {product.image_url ? (
+                                    <img
+                                        src={product.image_url}
+                                        alt={product.name}
+                                        className="w-full h-40 object-cover rounded-t-lg"
+                                    />
+                                ) : (
+                                    <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-t-lg">
+                                        <span className="text-gray-400 text-sm">Image Unavailable</span>
+                                    </div>
+                                )}
+
+                                {/* Card Content */}
+                                <CardContent className="p-4 flex-grow">
+                                    <h3 className="text-lg font-semibold text-center">
+                                        {`${product.brand || "No Brand"} ${product.name}`}
+                                    </h3>
+                                    <p className="text-sm text-gray-500 text-center">
+                                        {product.size?.toUpperCase() || "N/A"}
+                                    </p>
+                                </CardContent>
+
+                                {/* Footer Elements */}
+                                <div className="p-4 text-center space-y-2">
+                                    <a
+                                        href={product.link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="rounded-xl mb-4 mx-4 py-2 min-h-13 min-w-40 text-sm bg-red-300 inline-block flex items-center justify-center hover:bg-red-400 transition-colors"
+                                    >
+                                        {`${product.store || "Unknown Store"} - ${product.price || "N/A"}$`}
+                                    </a>
+                                </div>
+                            </Card>
+                        ))
                     ) : (
-                        <div className="text-center text-gray-500">No products found.</div>
+                        <div className="text-center text-gray-500 col-span-full">
+                            Search for products for them to appear.
+                        </div>
                     )}
-                </Accordion>
+                </div>
             </ScrollArea>
+
+
         </>
     );
 }

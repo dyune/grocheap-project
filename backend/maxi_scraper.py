@@ -6,7 +6,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
-from backend.models import create_item, initialize_db  # Ensure correct import
+from models import create_item, initialize_db  # Ensure correct import
+from selenium.webdriver.chrome.options import Options
+
+chrome_options = Options()
+chrome_options.add_argument("--headless=new")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--window-size=1920,1080")
 
 DEMO_URLS = [
     "https://www.maxi.ca/en/food/fruits-vegetables/c/28000",
