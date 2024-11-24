@@ -110,14 +110,6 @@ export default function Page() {
 
   return (
       <>
-        <Menubar className="min-h-20">
-          <MenubarMenu>
-            <MenubarTrigger>Recently Searched</MenubarTrigger>
-            <MenubarSeparator className="bg-black"></MenubarSeparator>
-            <MenubarTrigger>View Items by Store</MenubarTrigger>
-          </MenubarMenu>
-        </Menubar>
-
         <div className="relative min-h-screen bg-background text-foreground p-8">
           {!hasSearched ? (
               <LandingPage
