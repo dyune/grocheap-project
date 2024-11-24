@@ -1,4 +1,4 @@
-from scraper import update_prices, scrape_iga, scrape_super_c, scrape_maxi
+from superc_scraper import update_prices, scrape_iga, scrape_super_c, scrape_maxi
 from fastapi import FastAPI, HTTPException
 from models import *
 
