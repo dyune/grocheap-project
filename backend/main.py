@@ -16,23 +16,6 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# deniz wrote this
-# Define the input model
-# class InputText(BaseModel):
-#     text: str
-#
-
-# @app.post("/write-text/")
-# async def write_text(input_text: InputText):
-#     try:
-#         # Write the input text to the file
-#         with open(TEXT_FILE_PATH, "a") as file:  # Use "a" to append
-#             file.write(f"{input_text.text}\n")
-#         return {"message": "Text written successfully!"}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-#
-
 
 @app.on_event("startup")
 async def startup():
@@ -96,54 +79,6 @@ async def edit_item(item_id: int, item: ItemCreateRequest):
 async def remove_item(item_id: int):
     await delete_item(item_id)
     return {"message": "Item deleted"}
-
-
-# Store Endpoints
-@app.post("/stores/")
-async def add_store(store: StoreCreateRequest):
-    store_id = await create_store(store.name, store.website)
-    return {"id": store_id, **store.dict()}
-
-
-@app.get("/stores/", response_model=List[dict])
-async def get_stores():
-    stores = await fetch_all_stores()
-    return stores
-
-
-# Price Endpoints
-@app.post("/prices/")
-async def add_price(price: PriceCreateRequest):
-    price_id = await create_price(price.store_id, price.item_id, price.price, price.url)
-    return {"id": price_id, **price.dict()}
-
-
-@app.get("/prices/{item_id}")
-async def get_prices_for_item(item_id: int):
-    prices = await fetch_prices_by_item(item_id)
-    if not prices:
-        raise HTTPException(status_code=404, detail="Prices not found for this item")
-    return prices
-
-
-@app.get("/prices/{item_id}/{store_id}")
-async def get_latest_price(item_id: int, store_id: int):
-    latest_price = await fetch_latest_price(item_id, store_id)
-    if not latest_price:
-        raise HTTPException(status_code=404, detail="No price found for this item in the specified store")
-    return latest_price
-
-
-@app.put("/prices/{price_id}")
-async def edit_price(price_id: int, price: PriceUpdateRequest):
-    await update_price(price_id, price.price, price.url)
-    return {"id": price_id, **price.dict()}
-
-
-@app.delete("/prices/{price_id}")
-async def remove_price(price_id: int):
-    await delete_price(price_id)
-    return {"message": "Price deleted"}
 
 
 # Search for items by name, brand, category, or keywords.

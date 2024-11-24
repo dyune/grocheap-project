@@ -8,14 +8,15 @@ from backend.models import create_item, initialize_db
 
 # List of IGA pages to scrape
 DEMO_URLS = [
-    "https://www.iga.net/en/online_grocery/aisles/fruits_and_vegetables",
-    "https://www.iga.net/en/online_grocery/aisles/meat_and_seafood",
-    "https://www.iga.net/en/online_grocery/aisles/dairy_and_eggs",
+    "https://www.iga.net/en/online_grocery/produce",
+    "https://www.iga.net/en/online_grocery/meat",
+    "https://www.iga.net/en/online_grocery/produits_refrigeres",
+    "https://www.iga.net/en/online_grocery/deli_and_cheese"
 ]
 
 
 async def save_product_to_db(name, brand, link, image_url, size, store, price):
-    """Save product details to the database."""
+
     if name and link and price is not None:
         try:
             await create_item(name, brand, link, image_url, size, store, price)
@@ -34,10 +35,10 @@ def parse_product(product):
 
     # Brand
     brand_tag = product.find("div", class_="item-product__brand")
-    brand = brand_tag.text.strip() if brand_tag else "Brand not found"
+    brand = brand_tag.text.strip() if brand_tag else "No brand"
 
     # Product URL
-    link_tag = name_tag.find("a") if name_tag else None
+    link_tag = name_tag if name_tag else None
     link = "https://www.iga.net" + link_tag.get("href") if link_tag else None
 
     # Image URL
@@ -69,7 +70,7 @@ def scrape_page(url, driver):
     # Wait for the page to load fully
     try:
         WebDriverWait(driver, 40).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "grid"))
+            EC.presence_of_element_located((By.CLASS_NAME, "item-product"))
         )
         print(f"Page loaded successfully: {url}")
     except Exception as e:
