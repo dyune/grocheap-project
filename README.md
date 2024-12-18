@@ -8,10 +8,8 @@ This tool allows users to fetch and compare prices for various grocery stores on
 
 ## 📘 **About**
 The **Grocery Web Scraper** extracts product data from grocery store websites. It can be used to:
-- 🛒 **Track Prices**: Get updates on grocery prices.
-- 📈 **Compare Products**: Compare the cost of the same product across multiple stores.
 
-This tool is ideal for personal budgeting, data collection, and even market analysis for businesses interested in tracking price fluctuations.
+This tool could become ideal for personal budgeting, data collection, and even market analysis for businesses interested in tracking price fluctuations.
 
 ---
 
@@ -19,8 +17,8 @@ This tool is ideal for personal budgeting, data collection, and even market anal
 - 🛒 **Scrape and Compare Grocery Prices**: Extract product name, price, availability, and discounts.
 
 ## 🛠️ **Features Coming**
-- 📂 **Export Data**: Export scraped data to **CSV, JSON, or Excel**.
-- 🕒 **Scheduled Scrapes**: Use cron jobs to schedule daily/weekly scrapes.
 - 🔍 **Multi-store Support**: Scrape data from multiple online grocery stores (customizable).
 - 📊 **Price Analysis**: Get price comparisons from multiple stores.
+- 🛒 **Track Prices**: Get updates on grocery prices.
+- 📈 **Compare Products**: Compare the cost of the same product across multiple stores.
 
