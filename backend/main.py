@@ -2,6 +2,9 @@ from fastapi import FastAPI, HTTPException, Body
 
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.db import database, models, session
+from backend.db.session import init_db
+
 app = FastAPI()
 
 app.add_middleware(
@@ -12,7 +15,9 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
+app.include_router(database.router)
+
 
 @app.on_event("startup")
 async def startup():
-
+    init_db()
