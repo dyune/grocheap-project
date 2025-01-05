@@ -28,10 +28,10 @@ class Item(SQLModel, table=True):
     # Relationship to store the item belongs to
     store: "Store" = Relationship(back_populates="inventory_items")
 
-    __table_args__ = UniqueConstraint("name",
-                                      "link",
-                                      "store_id",
-                                      name="unique_name_link")
+    __table_args__ = (UniqueConstraint("name",
+                                       "link",
+                                       "store_id",
+                                       name="unique_name_link"),)
 
 
 class User(SQLModel, table=True):
@@ -45,4 +45,4 @@ class User(SQLModel, table=True):
     # Unidirectional association: User * --> * Item
     saved_items: List["Item"] = Relationship(link_model=UserToItemAssociation)
 
-    __table_args__ = UniqueConstraint("email", name="unique_email")
+    __table_args__ = (UniqueConstraint("email", name="unique_email"),)
