@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import create_engine
 from sqlmodel import SQLModel, Session
 from .models import *
+from .associations import *
 
 FILE_NAME = "grocery_items_data.db"
 DATABASE_URL = f"sqlite:///{FILE_NAME}"
@@ -12,9 +13,8 @@ engine = create_engine(DATABASE_URL, connect_args=connection_args, echo=True)
 
 
 def init_db():
-    print(SQLModel.metadata.tables.keys())
-    SQLModel.metadata.drop_all(engine)
-    SQLModel.metadata.create_all(engine, tables=[Store.__table__, Item.__table__])
+    print(SQLModel.metadata)
+    SQLModel.metadata.create_all(engine)
 
 
 def get_session():

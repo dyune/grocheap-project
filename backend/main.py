@@ -1,8 +1,6 @@
 from fastapi import FastAPI, HTTPException, Body
-
 from fastapi.middleware.cors import CORSMiddleware
-
-from backend.db import database, models, session
+from backend.db import crud, associations
 from backend.db.session import init_db
 
 app = FastAPI()
@@ -15,7 +13,8 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-app.include_router(database.router)
+app.include_router(crud.router)
+app.include_router(associations.router)
 
 
 @app.on_event("startup")
