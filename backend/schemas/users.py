@@ -1,9 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class UserCreate(BaseModel):
-    username: str
-    email: str
+    """
+    Max email len should be 254
+    Username max len arbitrarily defined
+    Password max len not defined, set by hashing algorithm
+    """
+    username: str = Field(max_length=50)
+    email: str = Field(max_length=254)
     hashed_password: str
 
 

@@ -3,12 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
-from .models import Item, User, Store
-from .session import get_session
-from ..schemas.items import ItemCreate
-from ..schemas.users import UserCreate, UserPublic, UserUpdatePassword, PrivateUserOut
-from ..schemas.stores import StoreModel
-from ..utils import hash
+from backend.db.models import Item, User, Store
+from backend.db.session import get_session
+from backend.schemas.items import ItemCreate
+from backend.schemas.users import UserCreate, UserPublic, UserUpdatePassword, PrivateUserOut
+from backend.schemas.stores import StoreModel
+from backend.utils import hash
 
 SessionDep = Annotated[Session, Depends(get_session)]
 AuthenticationDep = None
@@ -19,6 +19,7 @@ router = APIRouter(
 
 
 def save(item, session: SessionDep):
+    print(item)
     session.add(item)
     session.commit()
     session.refresh(item)
@@ -53,14 +54,29 @@ async def get_users(session: SessionDep) -> Sequence[User]:
     return session.exec(select(User)).all()
 
 
+# TODO: Delete this endpoint, the scraper will handle creation logic for *items*
 @router.post("/create/item")
 async def create_item(item: ItemCreate, session: SessionDep) -> Item:
     try:
-        db_item = Item.model_validate(item)
-        save(db_item, session)
-        return db_item  # Return db_item instead of item
-    except ValidationError:
-        raise HTTPException(status_code=400, detail="Invalid input detected.")
+        db_item = Item(
+            name=item.name,
+            brand=item.brand,
+            link=item.link,
+            image_url=item.image_url,
+            size=item.size,
+            store_id=item.store_id,
+            price=item.price
+        )
+
+        session.add(db_item)  # Error happens here
+        session.commit()
+        session.refresh(db_item)
+        return db_item
+
+    except Exception as e:
+        print(f"Error type: {type(e)}")
+        print(f"Error message: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/create/user")
@@ -70,6 +86,7 @@ async def create_user(user: UserCreate, session: SessionDep) -> UserPublic:
         db_user.hashed_password = hash.hash_password(db_user.hashed_password)
         save(db_user, session)
         return UserPublic.model_validate(db_user)
+
     except ValidationError:
         raise HTTPException(status_code=400, detail="Invalid input detected.")
 
@@ -80,6 +97,7 @@ async def create_store(store: StoreModel, session: SessionDep) -> Store:
         db_store = Store.model_validate(store)
         save(db_store, session)
         return db_store  # Return db_store instead of store
+
     except ValidationError:
         raise HTTPException(status_code=400, detail="Invalid input detected.")
 
@@ -97,6 +115,7 @@ async def update_item(identifier: int, price: float, session: SessionDep) -> Ite
 
 @router.put("/update/user")
 async def update_user_password(data: UserUpdatePassword, session: SessionDep) -> User:
+    # NEEDED TO AWAIT THE ASYNC FUNCTION, NOT THE DB QUERY INSIDE THE FUNCTION
     user = await get_user_by_email(data.email, session)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -117,6 +136,7 @@ async def update_store(store_name: str, store: StoreModel, session: SessionDep) 
             setattr(db_store, key, value)
         save(db_store, session)
         return db_store
+
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Store not found")
 
@@ -150,5 +170,6 @@ async def delete_store(name: str, session: SessionDep):
         session.delete(store)
         session.commit()
         return {"message": f"Store {name} deleted successfully"}
+
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Store not found")
