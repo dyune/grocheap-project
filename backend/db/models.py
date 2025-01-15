@@ -33,6 +33,15 @@ class Item(SQLModel, table=True):
                                        "store_id",
                                        name="unique_name_link"),)
 
+    def equals(self, other: "Item") -> bool:
+        return (self.name == other.name
+                and self.brand == other.brand
+                and self.link == other.link
+                and self.image_url == other.image_url
+                and self.size == other.size
+                and self.store_id == other.store_id
+                and self.price == other.price)
+
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
@@ -46,3 +55,5 @@ class User(SQLModel, table=True):
     saved_items: List["Item"] = Relationship(link_model=UserToItemAssociation)
 
     __table_args__ = (UniqueConstraint("email", name="unique_email"),)
+
+
