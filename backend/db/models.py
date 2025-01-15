@@ -19,7 +19,7 @@ class Item(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(max_length=100)
     brand: Optional[str] = Field(max_length=100)
-    link: str
+    link: str = Field(max_length=100)
     image_url: Optional[str]
     size: str = Field(max_length=50)
     store_id: int = Field(foreign_key="stores.id")
