@@ -10,7 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from db_utils import save_product_to_db
+from db_utils import save_product_to_db, create_db_item, save_products_to_db
 
 # Configure Chrome for headless mode
 chrome_options = Options()
@@ -20,9 +20,10 @@ chrome_options.add_argument("--window-size=1920,1080")
 
 # URLs of the SuperC pages
 DEMO_URLS = [
-    "https://www.superc.ca/en/aisles/fruits-vegetables/fruits",
-    "https://www.superc.ca/en/aisles/fruits-vegetables/vegetables",
-    "https://www.superc.ca/en/aisles/meat-poultry/beef-veal",
+    ("https://www.superc.ca/en/aisles/fruits-vegetables", 21),
+    ("https://www.superc.ca/en/aisles/dairy-eggs", 31),
+    ("https://www.superc.ca/en/aisles/pantry", 85),
+    ("https://www.superc.ca/en/aisles/meat-poultry", 13)
 ]
 
 
@@ -45,6 +46,7 @@ async def first_layer_parsing(url, driver):
     """
     # Navigate to the page
     driver.get(url)
+    db_products = []
 
     # Wait for the page to load fully
     try:
@@ -55,36 +57,30 @@ async def first_layer_parsing(url, driver):
 
     except Exception as e:
         print(f"Error waiting for page to load: {e}")
-        return []  # Return an empty list of async tasks to do.
+        return []
 
     # Scroll down to ensure all products are loaded (if the page has lazy loading)
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(2)  # Wait to allow additional products to load if needed
 
-    # Get the rendered HTML
     html = driver.page_source
-
-    # Parse with BeautifulSoup
     soup = BeautifulSoup(html, "html.parser")
-
-    # Find all product tiles
     products = soup.find_all("div", class_="default-product-tile")
 
-    tasks = []  # To store asyncio tasks
     for product in products:
         try:
-            # Extract data for each product
             brand = product.get("data-product-brand", "No brand")
             name = product.get("data-product-name", None)
 
             url_tag = product.find("a", class_="product-details-link")
             product_url = "https://www.superc.ca" + url_tag.get("href") if url_tag else "URL not found"
 
+            # TODO: Implement better sanitizing
             price_tag = product.find("span", class_="price-update")
             price = (
                 float(price_tag.text.strip().replace("$", "")) if price_tag else None
             )  # Convert price to float
-            print(price)
+            # print(price)
 
             size_tag = product.find("span", class_="head__unit-details")
             if size_tag:
@@ -107,17 +103,17 @@ async def first_layer_parsing(url, driver):
 
             # Create an asyncio task to save the product
             if name and product_url and price is not None:
-                tasks.append(
-                    save_product_to_db(
-                        name,
-                        brand,
-                        product_url,
-                        image,
-                        size,
-                        1,
-                        price,
-                    )
+                db_item = create_db_item(
+                    name,
+                    brand,
+                    product_url,
+                    image,
+                    size,
+                    1,
+                    price,
                 )
+                if db_item:
+                    db_products.append(db_item)
 
         except Exception as e:
             print(f"Parsing error, unable to save: {e}")
@@ -125,7 +121,7 @@ async def first_layer_parsing(url, driver):
         finally:
             continue
 
-    return tasks
+    return db_products
 
 
 async def gather_superc():
@@ -151,13 +147,36 @@ async def gather_superc():
         driver.quit()  # Ensure the browser is closed
 
 
-async def update_superc():
-    pass
+async def batch_insert_superc(urls):
+    """Gather SuperC products."""
+    driver = webdriver.Chrome(options=chrome_options)  # Set up the WebDriver
+    items = []
+
+    try:
+        print(DEMO_URLS)
+        for url in urls:
+            result = await first_layer_parsing(url, driver)
+            items.extend(result)
+            print(items)
+
+        if items:
+            await save_products_to_db(items)
+            print(f"Successfully saved {len(items)} products to the database.")
+
+    except Exception as e:
+        print(f"Error during update: {e}")
+
+    finally:
+        driver.quit()  # Ensure the browser is closed
 
 
 if __name__ == "__main__":
     tracemalloc.start()
-    ls = iterate_through_pages("https://www.superc.ca/en/aisles/fruits-vegetables", 21)
-    print(ls)
-    DEMO_URLS += ls
-    asyncio.run(gather_superc())
+    urls = []
+    for elem in DEMO_URLS:
+        urls.extend(
+            iterate_through_pages(elem[0], elem[1])
+        )
+    print(urls)
+    print(urls)
+    asyncio.run(batch_insert_superc(urls))
