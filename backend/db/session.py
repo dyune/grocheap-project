@@ -1,11 +1,8 @@
 import os
-from typing import Annotated, Sequence
-from fastapi import APIRouter, Depends
+
 from sqlalchemy import create_engine
-from sqlmodel import SQLModel, Session
-from .models import *
+
 from .associations import *
-from sqlalchemy.ext.asyncio import AsyncSession
 
 FILE_NAME = os.path.join("/Users/davidwang/PycharmProjects/grocheap-dev-project/", "grocery_items_data.db")
 DATABASE_URL = f"sqlite:///{FILE_NAME}"
