@@ -1,11 +1,9 @@
 from typing import Optional, List
 
-from backend.db import crud
 from backend.db.models import Item
-from backend.schemas import items
 from backend.db.session import Session, engine
+from backend.schemas import items
 from backend.schemas.items import ItemCreate
-import tracemalloc
 
 BATCH_SIZE = 40
 
@@ -61,5 +59,3 @@ async def save_products_to_db(products: List[Optional[Item]]) -> List[Optional[I
             print(f"Failed to save due to: {e}")
 
     return saved_items
-
-

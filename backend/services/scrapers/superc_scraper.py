@@ -10,7 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from db_utils import save_product_to_db, create_db_item, save_products_to_db
+from db_utils import create_db_item, save_products_to_db
 
 # Configure Chrome for headless mode
 chrome_options = Options()
