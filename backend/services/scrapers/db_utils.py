@@ -7,7 +7,7 @@ from backend.db.session import Session, engine
 from backend.schemas.items import ItemCreate
 import tracemalloc
 
-BATCH_SIZE = 20
+BATCH_SIZE = 40
 
 
 async def save_product_to_db(name, brand, link, image_url, size, store, price) -> Optional[Item]:
