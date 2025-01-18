@@ -1,11 +1,13 @@
 from typing import Optional, List
 
+from sqlalchemy import insert
+
 from backend.db.models import Item
 from backend.db.session import Session, engine
 from backend.schemas import items
 from backend.schemas.items import ItemCreate
 
-BATCH_SIZE = 40
+BATCH_SIZE = 100
 
 
 async def save_product_to_db(name, brand, link, image_url, size, store, price) -> Optional[Item]:
@@ -45,14 +47,17 @@ async def save_products_to_db(products: List[Optional[Item]]) -> List[Optional[I
     for i in range(0, len(products), BATCH_SIZE):
         try:
             batch = products[i:i + BATCH_SIZE]
+            dict_batch = []
+            for item in batch:
+                dict_batch.append(item.model_dump())
 
             with Session(engine) as session:  # Use a context manager to ensure proper cleanup
-                session.add_all(batch)
+                query = insert(Item).values(dict_batch).prefix_with("OR REPLACE")
+                session.execute(query)
                 session.commit()
 
                 # Refresh individual items in the batch if needed
                 for item in batch:
-                    session.refresh(item)
                     saved_items.append(item)
 
         except Exception as e:

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from backend.services.scrapers.superc_scraper import batch_insert_superc, prepare_urls, ALL_URLS
 from backend.db import crud, associations
 from backend.db.session import init_db
 
@@ -21,3 +21,8 @@ app.include_router(associations.router)
 @app.on_event("startup")
 async def startup():
     init_db()
+
+
+@app.post("/scrape/super-c")
+async def scrape_super_c():
+    await batch_insert_superc(prepare_urls(ALL_URLS))

@@ -9,8 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
-from db_utils import create_db_item, save_products_to_db
+from backend.services.scrapers.db_utils import create_db_item, save_products_to_db
 
 # Configure Chrome for headless mode
 chrome_options = Options()
@@ -19,12 +18,22 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
 
 # URLs of the SuperC pages
-DEMO_URLS = [
+ALL_URLS = [
     ("https://www.superc.ca/en/aisles/fruits-vegetables", 21),
     ("https://www.superc.ca/en/aisles/dairy-eggs", 31),
     ("https://www.superc.ca/en/aisles/pantry", 85),
     ("https://www.superc.ca/en/aisles/meat-poultry", 13)
 ]
+output_file = open("output.txt", "w")
+
+
+def prepare_urls(url_list):
+    res = []
+    for url in url_list:
+        res.extend(
+            iterate_through_pages(url[0], url[1])
+        )
+    return res
 
 
 def iterate_through_pages(link: str, max_pages: int) -> List[str]:
@@ -44,6 +53,7 @@ async def first_layer_parsing(url, driver):
     """
     Load a page with Selenium, parse the products, and return tasks to save them.
     """
+
     # Navigate to the page
     driver.get(url)
     db_products = []
@@ -103,6 +113,7 @@ async def first_layer_parsing(url, driver):
 
             # Create an asyncio task to save the product
             if name and product_url and price is not None:
+                output_file.write(f"{name}, {brand}, {product_url}\n")
                 db_item = create_db_item(
                     name,
                     brand,
@@ -124,40 +135,15 @@ async def first_layer_parsing(url, driver):
     return db_products
 
 
-async def gather_superc():
-    """Gather SuperC products."""
-    driver = webdriver.Chrome(options=chrome_options)  # Set up the WebDriver
-    all_tasks = []
-
-    try:
-        print(DEMO_URLS)
-        for url in DEMO_URLS:
-            print(tracemalloc.take_snapshot())
-            tasks = await first_layer_parsing(url, driver)
-            all_tasks.extend(tasks)
-
-        # Run all database save tasks
-        if all_tasks:
-            await asyncio.gather(*all_tasks)
-
-    except Exception as e:
-        print(f"Error during update: {e}")
-
-    finally:
-        driver.quit()  # Ensure the browser is closed
-
-
 async def batch_insert_superc(urls):
     """Gather SuperC products."""
     driver = webdriver.Chrome(options=chrome_options)  # Set up the WebDriver
     items = []
 
     try:
-        print(DEMO_URLS)
         for url in urls:
             result = await first_layer_parsing(url, driver)
             items.extend(result)
-            print(items)
 
         if items:
             await save_products_to_db(items)
@@ -172,11 +158,7 @@ async def batch_insert_superc(urls):
 
 if __name__ == "__main__":
     tracemalloc.start()
-    urls = []
-    for elem in DEMO_URLS:
-        urls.extend(
-            iterate_through_pages(elem[0], elem[1])
-        )
-    print(urls)
-    print(urls)
-    asyncio.run(batch_insert_superc(urls))
+    links = prepare_urls(ALL_URLS)
+    print(links)
+    asyncio.run(batch_insert_superc(links))
+
