@@ -22,8 +22,27 @@ ALL_URLS = [
     ("https://www.superc.ca/en/aisles/fruits-vegetables", 21),
     ("https://www.superc.ca/en/aisles/dairy-eggs", 31),
     ("https://www.superc.ca/en/aisles/pantry", 85),
-    ("https://www.superc.ca/en/aisles/meat-poultry", 13)
+    ("https://www.superc.ca/en/aisles/cooked-meals", 2),
+    ("https://www.superc.ca/en/aisles/value-pack", 16),
+    ("https://www.superc.ca/en/aisles/beverages", 36),
+    ("https://www.superc.ca/en/aisles/beer-wine", 17),
+    ("https://www.superc.ca/en/aisles/meat-poultry", 13),
+    ("https://www.superc.ca/en/aisles/vegan-vegetarian-food", 13),
+    ("https://www.superc.ca/en/aisles/organic-groceries", 10),
+    ("https://www.superc.ca/en/aisles/snacks", 49),
+    ("https://www.superc.ca/en/aisles/frozen", 29),
+    ("https://www.superc.ca/en/aisles/bread-bakery-products", 14),
+    ("https://www.superc.ca/en/aisles/deli-prepared-meals", 18),
+    ("https://www.superc.ca/en/aisles/fish-seafood", 5),
+    ("https://www.superc.ca/en/aisles/world-cuisine", 8),
+    ("https://www.superc.ca/en/aisles/household-cleaning", 19),
+    ("https://www.superc.ca/en/aisles/baby", 4),
+    ("https://www.superc.ca/en/aisles/health-beauty", 13),
+    ("https://www.superc.ca/en/aisles/pet-care", 8),
+    ("https://www.superc.ca/en/aisles/pharmacy", 3),
 ]
+
+
 output_file = open("output.txt", "w")
 
 
@@ -89,8 +108,7 @@ async def first_layer_parsing(url, driver):
             price_tag = product.find("span", class_="price-update")
             price = (
                 float(price_tag.text.strip().replace("$", "")) if price_tag else None
-            )  # Convert price to float
-            # print(price)
+            )
 
             size_tag = product.find("span", class_="head__unit-details")
             if size_tag:
@@ -161,4 +179,3 @@ if __name__ == "__main__":
     links = prepare_urls(ALL_URLS)
     print(links)
     asyncio.run(batch_insert_superc(links))
-
