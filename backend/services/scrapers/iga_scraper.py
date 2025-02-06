@@ -1,11 +1,14 @@
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import asyncio
-from models import create_item, initialize_db
 from selenium.webdriver.chrome.options import Options
+import xml.etree.ElementTree as ET
+
+from backend.services.scrapers.db_utils import create_db_item, save_products_to_db
 
 chrome_options = Options()
 chrome_options.add_argument("--headless=new")
@@ -13,49 +16,27 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
 
 # List of IGA pages to scrape
-DEMO_URLS = [
-    "https://www.iga.net/en/online_grocery/produce",
-    "https://www.iga.net/en/online_grocery/meat",
-    "https://www.iga.net/en/online_grocery/produits_refrigeres",
-    "https://www.iga.net/en/online_grocery/deli_and_cheese"
-]
+SITE_URL = "https://www.iga.net/en/online_grocery/browse?pageSize=24"
 
-
-async def save_product_to_db(name, brand, link, image_url, size, store, price):
-
-    if name and link and price is not None:
-        try:
-            await create_item(name, brand, link, image_url, size, store, price)
-            print(f"Saved: {name} from {store} at ${price}")
-        except Exception as e:
-            print(f"Failed to save {name}: {e}")
-    else:
-        print(f"Invalid product data: {name}, {brand}, {link}, {image_url}, {size}, {price}")
+URLS = [SITE_URL + f"&page={i}" for i in range(1, 1128)]
 
 
 def parse_product(product):
-    """Parse individual product details from the HTML."""
-    # Product name
     name_tag = product.find("a", class_="js-ga-productname")
     name = name_tag.text.strip() if name_tag else "Name not found"
 
-    # Brand
     brand_tag = product.find("div", class_="item-product__brand")
     brand = brand_tag.text.strip() if brand_tag else "No brand"
 
-    # Product URL
     link_tag = name_tag if name_tag else None
     link = "https://www.iga.net" + link_tag.get("href") if link_tag else None
 
-    # Image URL
     image_tag = product.find("img")
     image_url = image_tag.get("src") if image_tag else "Image not found"
 
-    # Size
     size_tag = product.find("div", class_="item-product__info")
-    size = size_tag.text.strip() if size_tag else "Size not found"
+    size = size_tag.text.strip() if size_tag else " "
 
-    # Price
     price_tag = product.find("span", class_="price text--strong")
     price = float(price_tag.text.strip().replace("$", "")) if price_tag else None
 
@@ -69,75 +50,78 @@ def parse_product(product):
     }
 
 
-def scrape_page(url, driver):
-    """Scrape a single IGA page using Selenium and BeautifulSoup."""
+async def scrape_page(url, driver):
     driver.get(url)
 
-    # Wait for the page to load fully
+    items = []
+
     try:
         WebDriverWait(driver, 40).until(
             EC.presence_of_element_located((By.CLASS_NAME, "item-product"))
         )
         print(f"Page loaded successfully: {url}")
+
     except Exception as e:
         print(f"Error waiting for page to load: {e}")
         return []
 
-    # Scroll to load more products if needed
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.CLASS_NAME, "grid"))
     )
 
-    # Parse the page content
     html = driver.page_source
     soup = BeautifulSoup(html, "html.parser")
-    product_containers = soup.find_all("div", class_="grid__item")
-
-    # Extract product details
-    products = []
-    for product in product_containers:
-        try:
-            product_data = parse_product(product)
-            if product_data["name"] and product_data["price"] is not None:
-                products.append(product_data)
-        except Exception as e:
-            print(f"Failed to parse product: {e}")
-
-    return products
-
-
-async def update_iga():
-    """Scrape IGA pages and save product data."""
-    await initialize_db()
-    driver = webdriver.Chrome()
+    all_products = soup.find_all("div", class_="grid__item")
 
     try:
-        all_products = []
-        for url in DEMO_URLS:
-            products = scrape_page(url, driver)
-            all_products.extend(products)
+        for product in all_products:
+            product_data = parse_product(product)
 
-        # Save all products to the database
-        tasks = [
-            save_product_to_db(
-                product["name"],
-                product["brand"],
-                product["link"],
-                product["image_url"],
-                product["size"],
-                "IGA",
-                product["price"],
-            )
-            for product in all_products
-        ]
-        if tasks:
-            await asyncio.gather(*tasks)
+            if product_data["name"] and product_data["price"] and product_data["link"] is not None:
+                db_item = create_db_item(
+                    product_data["name"],
+                    product_data["brand"],
+                    product_data["link"],
+                    product_data["image_url"],
+                    product_data["size"],
+                    3,
+                    product_data["price"],
+                )
+                if db_item:
+                    items.append(db_item)
+
+            else:
+                print(f"Product {product_data['name']} was missing essential information and could not be saved")
+
     except Exception as e:
-        print(f"Error during scraping: {e}")
+        print(f"Failed to scrape: {e}")
+        return None
+
+    return items
+
+
+async def update_iga(urls):
+    """Gather SuperC products."""
+    driver = webdriver.Chrome(options=chrome_options)  # Set up the WebDriver
+    items = []
+
+    try:
+        for url in urls:
+            result = await scrape_page(url, driver)
+            items.extend(result)
+
+        if items:
+            await save_products_to_db(items)
+            print(f"Successfully saved {len(items)} products to the database.")
+
+    except Exception as e:
+        print(f"Error during update: {e}")
+
     finally:
         driver.quit()
 
 
 if __name__ == "__main__":
-    asyncio.run(update_iga())
+    print(URLS)
+    asyncio.run(update_iga(URLS))
