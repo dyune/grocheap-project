@@ -16,7 +16,7 @@ class Store(SQLModel, table=True):
 class Item(SQLModel, table=True):
     __tablename__ = "items"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True, nullable=False)
     name: str = Field(max_length=100, index=True)
     brand: Optional[str] = Field(max_length=100)
     link: str = Field(max_length=100)

@@ -19,7 +19,6 @@ router = APIRouter(
 
 
 def save(item, session: SessionDep):
-    print(item)
     session.add(item)
     session.commit()
     session.refresh(item)
@@ -161,15 +160,3 @@ async def delete_user(email: str, session: SessionDep):
     session.delete(user)
     session.commit()
     return {"message": f"User {email} deleted successfully"}
-
-
-@router.delete("/delete/store/{name}")
-async def delete_store(name: str, session: SessionDep):
-    try:
-        store = await get_store(name, session)
-        session.delete(store)
-        session.commit()
-        return {"message": f"Store {name} deleted successfully"}
-
-    except NoResultFound:
-        raise HTTPException(status_code=404, detail="Store not found")

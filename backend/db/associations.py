@@ -2,7 +2,6 @@ from typing import Annotated
 from sqlmodel import Field, SQLModel, Session, select
 from fastapi import APIRouter, Depends
 from .session import get_session
-# from .crud import get_user_by_email, get_item_by_query
 
 SessionDep = Annotated[Session, Depends(get_session)]
 

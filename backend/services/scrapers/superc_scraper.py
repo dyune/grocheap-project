@@ -17,8 +17,14 @@ chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
 
-# URLs of the SuperC pages
+
 ALL_URLS = [
+    ("https://www.superc.ca/en/aisles/fruits-vegetables", 1)
+]
+
+
+# URLs of the SuperC pages
+ALL_URLS_ALL = [
     ("https://www.superc.ca/en/aisles/fruits-vegetables", 21),
     ("https://www.superc.ca/en/aisles/dairy-eggs", 31),
     ("https://www.superc.ca/en/aisles/pantry", 85),
@@ -164,7 +170,7 @@ async def batch_insert_superc(urls):
             items.extend(result)
 
         if items:
-            await save_products_to_db(items)
+            save_products_to_db(items)
             print(f"Successfully saved {len(items)} products to the database.")
 
     except Exception as e:
