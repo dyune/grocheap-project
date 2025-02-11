@@ -4,7 +4,9 @@ from backend.services.scrapers.superc_scraper import batch_insert_superc, prepar
 from backend.db import crud, associations
 from backend.db.session import init_db
 
-app = FastAPI()
+app = FastAPI(
+    prefix="/api"
+)
 
 app.add_middleware(
     CORSMiddleware,
