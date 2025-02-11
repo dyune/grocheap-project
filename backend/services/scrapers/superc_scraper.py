@@ -19,7 +19,7 @@ chrome_options.add_argument("--window-size=1920,1080")
 
 
 ALL_URLS = [
-    ("https://www.superc.ca/en/aisles/fruits-vegetables", 1)
+    ("https://www.superc.ca/en/aisles/fruits-vegetables", 5)
 ]
 
 
