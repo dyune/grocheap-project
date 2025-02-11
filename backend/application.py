@@ -23,6 +23,7 @@ app.include_router(associations.router)
 @app.on_event("startup")
 async def startup():
     init_db()
+    print("Database initialized.")
 
 
 @app.post("/scrape/super-c")

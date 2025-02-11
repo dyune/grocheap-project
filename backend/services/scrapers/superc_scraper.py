@@ -9,7 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from backend.services.scrapers.db_utils import create_db_item, save_products_to_db
+from backend.services.scrapers.scrape_utils import create_db_item, save_products_to_db, parse_unit_price
 
 # Configure Chrome for headless mode
 chrome_options = Options()
@@ -18,19 +18,17 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
 
 
-ALL_URLS = [
-    ("https://www.superc.ca/en/aisles/fruits-vegetables", 5)
-]
-
-
 # URLs of the SuperC pages
-ALL_URLS_ALL = [
+BATCH_1 = [
     ("https://www.superc.ca/en/aisles/fruits-vegetables", 21),
     ("https://www.superc.ca/en/aisles/dairy-eggs", 31),
     ("https://www.superc.ca/en/aisles/pantry", 85),
     ("https://www.superc.ca/en/aisles/cooked-meals", 2),
     ("https://www.superc.ca/en/aisles/value-pack", 16),
     ("https://www.superc.ca/en/aisles/beverages", 36),
+]
+
+BATCH_2 = [
     ("https://www.superc.ca/en/aisles/beer-wine", 17),
     ("https://www.superc.ca/en/aisles/meat-poultry", 13),
     ("https://www.superc.ca/en/aisles/vegan-vegetarian-food", 13),
@@ -41,15 +39,7 @@ ALL_URLS_ALL = [
     ("https://www.superc.ca/en/aisles/deli-prepared-meals", 18),
     ("https://www.superc.ca/en/aisles/fish-seafood", 5),
     ("https://www.superc.ca/en/aisles/world-cuisine", 8),
-    ("https://www.superc.ca/en/aisles/household-cleaning", 19),
-    ("https://www.superc.ca/en/aisles/baby", 4),
-    ("https://www.superc.ca/en/aisles/health-beauty", 13),
-    ("https://www.superc.ca/en/aisles/pet-care", 8),
-    ("https://www.superc.ca/en/aisles/pharmacy", 3),
 ]
-
-
-output_file = open("output.txt", "w")
 
 
 def prepare_urls(url_list):
@@ -110,11 +100,17 @@ async def first_layer_parsing(url, driver):
             url_tag = product.find("a", class_="product-details-link")
             product_url = "https://www.superc.ca" + url_tag.get("href") if url_tag else "URL not found"
 
-            # TODO: Implement better sanitizing
+            # TODO: Implement better product price tag sanitizing
             price_tag = product.find("span", class_="price-update")
-            price = (
-                float(price_tag.text.strip().replace("$", "")) if price_tag else None
-            )
+            try:
+                price = (
+                    float(price_tag.text.strip().replace("$", "")) if price_tag else None
+                )
+
+            except Exception as e:
+                price = parse_unit_price(price_tag.text)
+                if not price:
+                    price = None
 
             size_tag = product.find("span", class_="head__unit-details")
             if size_tag:
@@ -137,7 +133,6 @@ async def first_layer_parsing(url, driver):
 
             # Create an asyncio task to save the product
             if name and product_url and price is not None:
-                output_file.write(f"{name}, {brand}, {product_url}\n")
                 db_item = create_db_item(
                     name,
                     brand,
@@ -148,7 +143,10 @@ async def first_layer_parsing(url, driver):
                     price,
                 )
                 if db_item:
+                    print(db_item)
                     db_products.append(db_item)
+                else:
+                    print(f"Missing values, couldn't save: {name}")
 
         except Exception as e:
             print(f"Parsing error, unable to save: {e}")
@@ -167,6 +165,7 @@ async def batch_insert_superc(urls):
     try:
         for url in urls:
             result = await first_layer_parsing(url, driver)
+            print(f'Found {len(result)} products')
             items.extend(result)
 
         if items:
@@ -182,6 +181,8 @@ async def batch_insert_superc(urls):
 
 if __name__ == "__main__":
     tracemalloc.start()
-    links = prepare_urls(ALL_URLS)
-    print(links)
-    asyncio.run(batch_insert_superc(links))
+    links_1 = prepare_urls(BATCH_1)
+    links_2 = prepare_urls(BATCH_2)
+    print(links_1, links_2)
+    asyncio.run(batch_insert_superc(links_1))
+    asyncio.run(batch_insert_superc(links_2))

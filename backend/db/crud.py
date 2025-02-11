@@ -53,31 +53,6 @@ async def get_users(session: SessionDep) -> Sequence[User]:
     return session.exec(select(User)).all()
 
 
-# TODO: Delete this endpoint, the scraper will handle creation logic for *items*
-@router.post("/create/item")
-async def create_item(item: ItemCreate, session: SessionDep) -> Item:
-    try:
-        db_item = Item(
-            name=item.name,
-            brand=item.brand,
-            link=item.link,
-            image_url=item.image_url,
-            size=item.size,
-            store_id=item.store_id,
-            price=item.price
-        )
-
-        session.add(db_item)  # Error happens here
-        session.commit()
-        session.refresh(db_item)
-        return db_item
-
-    except Exception as e:
-        print(f"Error type: {type(e)}")
-        print(f"Error message: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-
 @router.post("/create/user")
 async def create_user(user: UserCreate, session: SessionDep) -> UserPublic:
     try:
@@ -101,17 +76,6 @@ async def create_store(store: StoreModel, session: SessionDep) -> Store:
         raise HTTPException(status_code=400, detail="Invalid input detected.")
 
 
-@router.put("/update/item/{identifier}")
-async def update_item(identifier: int, price: float, session: SessionDep) -> Item:
-    item = await get_item_by_query(identifier, session)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-
-    item.price = price
-    save(item, session)
-    return item
-
-
 @router.put("/update/user")
 async def update_user_password(data: UserUpdatePassword, session: SessionDep) -> User:
     # NEEDED TO AWAIT THE ASYNC FUNCTION, NOT THE DB QUERY INSIDE THE FUNCTION
@@ -125,30 +89,6 @@ async def update_user_password(data: UserUpdatePassword, session: SessionDep) ->
     user.hashed_password = hash.hash_password(data.new_password)  # Added new_password field
     save(user, session)
     return user
-
-
-@router.put("/update/store/{store_name}")
-async def update_store(store_name: str, store: StoreModel, session: SessionDep) -> Store:
-    try:
-        db_store = await get_store(store_name, session)
-        for key, value in store.model_dump(exclude_unset=True).items():
-            setattr(db_store, key, value)
-        save(db_store, session)
-        return db_store
-
-    except NoResultFound:
-        raise HTTPException(status_code=404, detail="Store not found")
-
-
-@router.delete("/delete/item/{identifier}")
-async def delete_item(identifier: int, session: SessionDep):
-    item = await get_item_by_query(identifier, session)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-
-    session.delete(item)
-    session.commit()
-    return {"message": f"Item {identifier} deleted successfully"}
 
 
 @router.delete("/delete/user/{email}")
