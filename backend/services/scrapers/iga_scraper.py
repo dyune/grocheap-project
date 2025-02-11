@@ -8,7 +8,7 @@ import asyncio
 from selenium.webdriver.chrome.options import Options
 import xml.etree.ElementTree as ET
 
-from backend.services.scrapers.db_utils import create_db_item, save_products_to_db
+from backend.services.scrapers.scrape_utils import create_db_item, save_products_to_db
 
 chrome_options = Options()
 chrome_options.add_argument("--headless=new")

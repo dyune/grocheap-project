@@ -1,4 +1,5 @@
 from typing import Optional, List
+import re
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -66,3 +67,13 @@ def save_products_to_db(products: List[Optional[Item]]) -> List[Optional[Item]]:
 
     return saved_items
 
+
+def parse_unit_price(text):
+    match = re.search(r"\d+\s*/\s*\$\d+\.\d{2}", text)
+    if match:
+        quantity = int(match.group(1))
+        total_price = float(match.group(2))
+        unit_price = total_price / quantity
+        return round(unit_price, 2)
+    print("No match", text)
+    return None
