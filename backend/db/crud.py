@@ -2,7 +2,8 @@ from typing import Annotated, Sequence
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 from sqlalchemy.exc import NoResultFound
-from sqlmodel import Session, select
+from sqlalchemy.future import select
+from sqlmodel import Session
 from backend.db.models import Item, User, Store
 from backend.db.session import get_session
 from backend.schemas.items import ItemCreate
@@ -27,7 +28,8 @@ def save(item, session: SessionDep):
 @router.get("/get/store/{name}")
 async def get_store(name: str, session: SessionDep) -> Store:
     try:
-        store = session.exec(select(Store).where(Store.name == name)).one()
+        result = session.execute(select(Store).where(Store.name == name))
+        store = result.scalar_one()
         return store
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Store not found")
@@ -35,22 +37,26 @@ async def get_store(name: str, session: SessionDep) -> Store:
 
 @router.get("/get/item-query/")
 async def get_item_by_query(identifier: int, session: SessionDep) -> Item | None:
-    return session.exec(select(Item).where(Item.id == identifier)).first()
+    result = session.execute(select(Item).where(Item.id == identifier))
+    return result.scalar_one_or_none()
 
 
 @router.get("/get/items")
 async def get_items(session: SessionDep) -> Sequence[Item]:
-    return session.exec(select(Item)).all()
+    result = session.execute(select(Item))
+    return result.scalars().all()
 
 
 @router.get("/get/user/{email}")
 async def get_user_by_email(email: str, session: SessionDep) -> User | None:
-    return session.exec(select(User).where(User.email == email)).first()
+    result = session.execute(select(User).where(User.email == email))
+    return result.scalar_one_or_none()
 
 
 @router.get("/get/users")
 async def get_users(session: SessionDep) -> Sequence[User]:
-    return session.exec(select(User)).all()
+    result = session.execute(select(User))
+    return result.scalars().all()
 
 
 @router.post("/create/user")
@@ -70,7 +76,7 @@ async def create_store(store: StoreModel, session: SessionDep) -> Store:
     try:
         db_store = Store.model_validate(store)
         save(db_store, session)
-        return db_store  # Return db_store instead of store
+        return db_store
 
     except ValidationError:
         raise HTTPException(status_code=400, detail="Invalid input detected.")
@@ -78,7 +84,6 @@ async def create_store(store: StoreModel, session: SessionDep) -> Store:
 
 @router.put("/update/user")
 async def update_user_password(data: UserUpdatePassword, session: SessionDep) -> User:
-    # NEEDED TO AWAIT THE ASYNC FUNCTION, NOT THE DB QUERY INSIDE THE FUNCTION
     user = await get_user_by_email(data.email, session)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -86,7 +91,7 @@ async def update_user_password(data: UserUpdatePassword, session: SessionDep) ->
     if not hash.verify_password(data.old_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect password")
 
-    user.hashed_password = hash.hash_password(data.new_password)  # Added new_password field
+    user.hashed_password = hash.hash_password(data.new_password)
     save(user, session)
     return user
 

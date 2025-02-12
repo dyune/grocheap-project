@@ -48,22 +48,42 @@ def create_db_item(name, brand, link, image_url, size, store_id, price) -> Optio
 def save_products_to_db(products: List[Optional[Item]]) -> List[Optional[Item]]:
     saved_items = []
 
-    for i in range(0, len(products), BATCH_SIZE):
-        try:
-            batch = [item for item in products if item]  # Ensure items are not None
-            dict_batch = [item.model_dump(exclude={"id"}) for item in batch]  # Exclude `id`
+    with SessionLocal() as session:
+        for i in range(0, len(products), BATCH_SIZE):
+            try:
+                batch = products[i : i + BATCH_SIZE]
+                batch = [item for item in batch if item]
 
-            with SessionLocal() as session:
-                query = insert(Item).values(dict_batch).on_conflict_do_update(
-                    index_elements=['name', 'link', 'store_id'],
-                    set_={c.name: c for c in insert(Item).excluded if c.name != 'id'}
-                )
+                if not batch:
+                    continue
+
+                seen = set()
+                dict_batch = []
+                for item in batch:
+                    key = (item.name, item.link, item.store_id)
+                    if key not in seen:
+                        seen.add(key)
+                        dict_batch.append(item.model_dump(exclude={"id"}))
+
+                query = insert(Item).values(dict_batch).on_conflict_do_nothing()
                 session.execute(query)
+
+                for item in batch:
+                    session.query(Item).filter_by(
+                        name=item.name, link=item.link, store_id=item.store_id
+                    ).update({
+                        "brand": item.brand,
+                        "image_url": item.image_url,
+                        "size": item.size,
+                        "price": item.price
+                    })
+
                 session.commit()
                 saved_items.extend(batch)
 
-        except SQLAlchemyError as e:
-            print(f"Failed to save batch due to: {e}")
+            except SQLAlchemyError as e:
+                session.rollback()
+                print(f"Failed to save batch due to: {e}")
 
     return saved_items
 

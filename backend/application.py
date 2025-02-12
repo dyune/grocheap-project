@@ -1,12 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.services.scrapers.superc_scraper import batch_insert_superc, prepare_urls, ALL_URLS
+from backend.api import search
+from backend.services.scrapers.superc_scraper import batch_insert_superc, prepare_urls
 from backend.db import crud, associations
 from backend.db.session import init_db
 
-app = FastAPI(
-    prefix="/api"
-)
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +17,7 @@ app.add_middleware(
 
 app.include_router(crud.router)
 app.include_router(associations.router)
+app.include_router(search.router)
 
 
 @app.on_event("startup")
@@ -25,7 +25,3 @@ async def startup():
     init_db()
     print("Database initialized.")
 
-
-@app.post("/scrape/super-c")
-async def scrape_super_c():
-    await batch_insert_superc(prepare_urls(ALL_URLS))
