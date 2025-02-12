@@ -1,6 +1,6 @@
 import unittest
 from backend.db.models import Item
-from backend.services.scrapers.scrape_utils import save_product_to_db
+from backend.services.scrapers.scraper_utils import save_product_to_db
 from backend.db.session import SessionDep
 
 

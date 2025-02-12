@@ -1,21 +1,31 @@
 import asyncio
+import random
 import time
 import tracemalloc
-from typing import List
 
+from fake_useragent import UserAgent
+from typing import List
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from backend.services.scrapers.scrape_utils import create_db_item, save_products_to_db, parse_unit_price
+from backend.services.scrapers.scraper_utils import create_db_item, save_products_to_db, parse_unit_price
 
 # Configure Chrome for headless mode
+
+ua = UserAgent()
 chrome_options = Options()
+chrome_options.add_argument(f"user-agent={ua.random}")
 chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
+
+
+TEST = [
+    ("https://www.superc.ca/en/aisles/fruits-vegetables", 21),
+]
 
 
 # URLs of the SuperC pages
@@ -164,6 +174,8 @@ async def batch_insert_superc(urls):
 
     try:
         for url in urls:
+            delay = random.uniform(2, 5)  # Timeout to prevent being spotted as bot
+            time.sleep(delay)
             result = await first_layer_parsing(url, driver)
             print(f'Found {len(result)} products')
             items.extend(result)
@@ -181,8 +193,9 @@ async def batch_insert_superc(urls):
 
 if __name__ == "__main__":
     tracemalloc.start()
+    # asyncio.run(batch_insert_superc(prepare_urls(TEST)))
     links_1 = prepare_urls(BATCH_1)
     links_2 = prepare_urls(BATCH_2)
-    print(links_1, links_2)
+
     asyncio.run(batch_insert_superc(links_1))
     asyncio.run(batch_insert_superc(links_2))
