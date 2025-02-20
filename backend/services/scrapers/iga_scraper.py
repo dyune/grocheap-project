@@ -112,7 +112,7 @@ async def update_iga(urls):
             items.extend(result)
 
         if items:
-            await save_products_to_db(items)
+            save_products_to_db(items)
             print(f"Successfully saved {len(items)} products to the database.")
 
     except Exception as e:

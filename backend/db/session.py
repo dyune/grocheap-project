@@ -1,19 +1,21 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-
 from backend.db.associations import *  # Ensure models are imported
+import os
 
-# PostgreSQL Database URL
-DATABASE_URL = "postgresql://postgres:pass@localhost:5433/fastapi"
+user = os.environ["DB_USER"]
+password = os.environ["DB_PASS"]
+host = os.environ["DB_HOST"]
+port = os.environ["DB_PORT"]
+database = os.environ["DB_NAME"]
 
-# Create database engine (PostgreSQL doesn't use `connect_args`)
+DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
 engine = create_engine(DATABASE_URL, echo=True)
 
-# Create session factory
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
-# Initialize database
 def init_db():
     print(SQLModel.metadata)
     SQLModel.metadata.create_all(engine)
