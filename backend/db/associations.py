@@ -32,7 +32,7 @@ async def get_associations(session: SessionDep):
     return all_associations
 
 
-@router.post("/create/association")
+@router.post("/associations/{user_id}")
 async def create_association(user_id: int, item_id: int, session: SessionDep):
     new_association = UserToItemAssociation(user_id=user_id, item_id=item_id)
     save(new_association, session)

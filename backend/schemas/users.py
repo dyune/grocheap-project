@@ -8,18 +8,25 @@ class UserCreate(BaseModel):
     Password max len not defined, set by hashing algorithm
     """
     username: str = Field(max_length=50)
+
     email: str = Field(max_length=254)
+
     hashed_password: str
 
 
 class UserUpdatePassword(BaseModel):
+
     email: str
+
     new_password: str
+
     old_password: str
 
 
 class UserPublic(BaseModel):
+
     username: str
+
     email: str
 
     class Config:
@@ -27,8 +34,11 @@ class UserPublic(BaseModel):
 
 
 class PrivateUserOut(BaseModel):
+
     username: str
+
     email: str
+
     hashed_password: str
 
     class Config:

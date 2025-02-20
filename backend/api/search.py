@@ -18,15 +18,6 @@ router = APIRouter(
 )
 
 
-@router.get("/database/get/{item_query}/")
-async def get_items(item_query: str) -> dict[str, Any]:
-    with SessionLocal() as session:
-        result = session.execute(
-            select(Item).where(Item.name == item_query)
-        )
-    return {"items": result.fetchall()}
-
-
 @router.get("/items/query")
 async def search_items(
         query: str = Query(..., min_length=1, description="Search term for name, brand, or description"),
