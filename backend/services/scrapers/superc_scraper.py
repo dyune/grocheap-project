@@ -11,7 +11,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from backend.services.scrapers.scraper_utils import create_db_item, save_products_to_db, parse_unit_price
+from backend.services.scrapers.utils.scraper_utils import create_db_item, save_products_to_db, parse_unit_price
 
 # Configure Chrome for headless mode
 

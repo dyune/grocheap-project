@@ -1,17 +1,21 @@
+from typing import Annotated
+from fastapi import Depends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from backend.db.associations import *  # Ensure models are imported
-import os
+from sqlmodel.main import SQLModel
 
-user = os.environ["DB_USER"]
-password = os.environ["DB_PASS"]
-host = os.environ["DB_HOST"]
-port = os.environ["DB_PORT"]
-database = os.environ["DB_NAME"]
+user = "postgres"
+password = "wyqtun-wubgic-0sAhca"
+host = "grocheap-1-instance-1.c3ees26qorwp.ca-central-1.rds.amazonaws.com"
+port = "5432"
+database = "postgres"
 
-DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+DATABASE_URL = (
+    f"postgresql://{user}:{password}@{host}:{port}/{database}"
+    "?sslmode=disable&gssencmode=disable"
+)
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, connect_args={"connect_timeout": 5})
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
