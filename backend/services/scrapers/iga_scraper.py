@@ -1,4 +1,3 @@
-import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,9 +5,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import asyncio
 from selenium.webdriver.chrome.options import Options
-import xml.etree.ElementTree as ET
 
-from backend.services.scrapers.scraper_utils import create_db_item, save_products_to_db
+from backend.services.scrapers.utils.scraper_utils import create_db_item, save_products_to_db
 
 chrome_options = Options()
 chrome_options.add_argument("--headless=new")
