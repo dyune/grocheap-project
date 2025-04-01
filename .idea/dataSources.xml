@@ -16,18 +16,11 @@
         </library>
       </libraries>
     </data-source>
-    <data-source source="LOCAL" name="fastapi@localhost" uuid="f7d4e48b-866e-4203-a20d-c691eb0a54a5">
+    <data-source source="LOCAL" name="defaultdb@db-1-do-user-20184712-0.j.db.ondigitalocean.com" uuid="b999accd-0985-4485-ae80-7583f1ac4de7">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5433/fastapi</jdbc-url>
-      <working-dir>$ProjectFileDir$</working-dir>
-    </data-source>
-    <data-source source="LOCAL" name="postgres@grocheap-1-instance-1.c3ees26qorwp.ca-central-1.rds.amazonaws.com" uuid="36261a91-0d0f-4661-8b6d-57d62be566d0">
-      <driver-ref>postgresql</driver-ref>
-      <synchronize>true</synchronize>
-      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://grocheap-1-instance-1.c3ees26qorwp.ca-central-1.rds.amazonaws.com:5432/postgres</jdbc-url>
+      <jdbc-url>jdbc:postgresql://db-1-do-user-20184712-0.j.db.ondigitalocean.com:25060/defaultdb</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

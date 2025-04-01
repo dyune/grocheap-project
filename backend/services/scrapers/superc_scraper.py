@@ -13,6 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from backend.services.scrapers.utils.scraper_utils import create_db_item, save_products_to_db, parse_unit_price
 
+
 # Configure Chrome for headless mode
 
 ua = UserAgent()
@@ -24,7 +25,7 @@ chrome_options.add_argument("--window-size=1920,1080")
 
 
 TEST = [
-    ("https://www.superc.ca/en/aisles/fruits-vegetables", 21),
+    ("https://www.superc.ca/en/aisles/fruits-vegetables", 2),
 ]
 
 
@@ -193,9 +194,9 @@ async def batch_insert_superc(urls):
 
 if __name__ == "__main__":
     tracemalloc.start()
-    # asyncio.run(batch_insert_superc(prepare_urls(TEST)))
-    links_1 = prepare_urls(BATCH_1)
-    links_2 = prepare_urls(BATCH_2)
-
-    asyncio.run(batch_insert_superc(links_1))
-    asyncio.run(batch_insert_superc(links_2))
+    asyncio.run(batch_insert_superc(prepare_urls(TEST)))
+    # links_1 = prepare_urls(BATCH_1)
+    # links_2 = prepare_urls(BATCH_2)
+    #
+    # asyncio.run(batch_insert_superc(links_1))
+    # asyncio.run(batch_insert_superc(links_2))
