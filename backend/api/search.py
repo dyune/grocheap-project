@@ -1,9 +1,5 @@
-from typing import List, Dict, Tuple, Sequence, Any
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
-from sqlalchemy import text, Row
-from sqlmodel import select
-from backend.db.models import Item
+from sqlalchemy import text
 from backend.db.session import SessionLocal
 
 

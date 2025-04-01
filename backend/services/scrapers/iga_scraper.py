@@ -1,11 +1,11 @@
+import asyncio
+from typing import List
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
-import asyncio
 from selenium.webdriver.chrome.options import Options
-
 from backend.services.scrapers.utils.scraper_utils import create_db_item, save_products_to_db
 
 chrome_options = Options()
@@ -14,9 +14,54 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
 
 # List of IGA pages to scrape
-SITE_URL = "https://www.iga.net/en/online_grocery/browse?pageSize=24"
+# SITE_URL = "https://www.iga.net/en/online_grocery/browse?pageSize=24"
+# URLS = [SITE_URL + f"&page={i}" for i in range(1, 1128)]
 
-URLS = [SITE_URL + f"&page={i}" for i in range(1, 1128)]
+URLS_1 = [
+    ("https://www.iga.net/en/online_grocery/instore_bakery", 41),
+    ("https://www.iga.net/en/online_grocery/commercial_bakery", 14),
+    ("https://www.iga.net/en/online_grocery/produce", 55),
+    ("https://www.iga.net/en/online_grocery/home_meal_replacement", 33),
+]
+
+URLS_2 = [
+    ("https://www.iga.net/en/online_grocery/produits_refrigeres", 56),
+    ("https://www.iga.net/en/online_grocery/frozen_grocery", 44),
+    ("https://www.iga.net/en/online_grocery/sushis", 9),
+    ("https://www.iga.net/en/online_grocery/meat", 54),
+]
+
+URLS_3 = [
+    ("https://www.iga.net/en/online_grocery/beverages", 81),
+    ("https://www.iga.net/en/online_grocery/deli_and_cheese", 59),
+    ("https://www.iga.net/en/online_grocery/seafood", 20),
+]
+
+URLS_4 = [
+    ("https://www.iga.net/en/online_grocery/browse/Grocery/Snacks", 87)
+]
+
+
+def prepare_urls(url_list):
+    res = []
+    for url in url_list:
+        res.extend(
+            iterate_through_pages(url[0], url[1])
+        )
+    return res
+
+
+def iterate_through_pages(link: str, max_pages: int) -> List[str]:
+    index = 1
+    pages = []
+    while index <= max_pages:
+        if index == 1:
+            pages.append(link)
+        else:
+            paginated_link = link + f"?page={index}"
+            pages.append(paginated_link)
+        index += 1
+    return pages
 
 
 def parse_product(product):
@@ -48,9 +93,9 @@ def parse_product(product):
     }
 
 
+
 async def scrape_page(url, driver):
     driver.get(url)
-
     items = []
 
     try:
@@ -62,11 +107,6 @@ async def scrape_page(url, driver):
     except Exception as e:
         print(f"Error waiting for page to load: {e}")
         return []
-
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CLASS_NAME, "grid"))
-    )
 
     html = driver.page_source
     soup = BeautifulSoup(html, "html.parser")
@@ -99,7 +139,7 @@ async def scrape_page(url, driver):
     return items
 
 
-async def update_iga(urls):
+async def scrape_iga(urls):
     """Gather SuperC products."""
     driver = webdriver.Chrome(options=chrome_options)  # Set up the WebDriver
     items = []
@@ -121,5 +161,7 @@ async def update_iga(urls):
 
 
 if __name__ == "__main__":
-    print(URLS)
-    asyncio.run(update_iga(URLS))
+    # batch_1 = prepare_urls(URLS_1)
+    # asyncio.run(scrape_iga(batch_1))
+    link = prepare_urls("https://www.iga.net/en/online_grocery/instore_bakery", 2)
+    asyncio.run(scrape_iga(link))

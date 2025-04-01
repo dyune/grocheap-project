@@ -20,7 +20,6 @@ app.include_router(search.router)
 async def startup():
     try:
         init_db()
-        print("Database initialized successfully")
     except Exception as e:
         print(f"Error: {e}")
 
