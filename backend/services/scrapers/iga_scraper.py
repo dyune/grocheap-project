@@ -1,12 +1,17 @@
 import asyncio
-from typing import List
+from typing import Dict, List
+
+from bs4 import PageElement
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
-from backend.services.scrapers.utils.scraper_utils import create_db_item, save_products_to_db
+
+from backend.db.models import Item
+from backend.services.scrapers.utils.scraper_utils \
+    import save_products_to_db, prepare_urls, process_items_for_db
 
 chrome_options = Options()
 chrome_options.add_argument("--headless=new")
@@ -42,29 +47,7 @@ URLS_4 = [
 ]
 
 
-def prepare_urls(url_list):
-    res = []
-    for url in url_list:
-        res.extend(
-            iterate_through_pages(url[0], url[1])
-        )
-    return res
-
-
-def iterate_through_pages(link: str, max_pages: int) -> List[str]:
-    index = 1
-    pages = []
-    while index <= max_pages:
-        if index == 1:
-            pages.append(link)
-        else:
-            paginated_link = link + f"?page={index}"
-            pages.append(paginated_link)
-        index += 1
-    return pages
-
-
-def parse_product(product):
+def parse_product(product: PageElement) -> Dict[str, str]:
     name_tag = product.find("a", class_="js-ga-productname")
     name = name_tag.text.strip() if name_tag else "Name not found"
 
@@ -72,7 +55,7 @@ def parse_product(product):
     brand = brand_tag.text.strip() if brand_tag else "No brand"
 
     link_tag = name_tag if name_tag else None
-    link = "https://www.iga.net" + link_tag.get("href") if link_tag else None
+    product_link = "https://www.iga.net" + link_tag.get("href") if link_tag else None
 
     image_tag = product.find("img")
     image_url = image_tag.get("src") if image_tag else "Image not found"
@@ -86,15 +69,14 @@ def parse_product(product):
     return {
         "name": name,
         "brand": brand,
-        "link": link,
+        "link": product_link,
         "image_url": image_url,
         "size": size,
         "price": price,
     }
 
 
-
-async def scrape_page(url, driver):
+async def scrape_page(url, driver) -> List[Item]:
     driver.get(url)
     items = []
 
@@ -112,34 +94,10 @@ async def scrape_page(url, driver):
     soup = BeautifulSoup(html, "html.parser")
     all_products = soup.find_all("div", class_="grid__item")
 
-    try:
-        for product in all_products:
-            product_data = parse_product(product)
-
-            if product_data["name"] and product_data["price"] and product_data["link"] is not None:
-                db_item = create_db_item(
-                    product_data["name"],
-                    product_data["brand"],
-                    product_data["link"],
-                    product_data["image_url"],
-                    product_data["size"],
-                    3,
-                    product_data["price"],
-                )
-                if db_item:
-                    items.append(db_item)
-
-            else:
-                print(f"Product {product_data['name']} was missing essential information and could not be saved")
-
-    except Exception as e:
-        print(f"Failed to scrape: {e}")
-        return None
-
-    return items
+    return process_items_for_db(1, all_products, parse_product)
 
 
-async def scrape_iga(urls):
+async def scrape_iga(urls) -> None:
     """Gather SuperC products."""
     driver = webdriver.Chrome(options=chrome_options)  # Set up the WebDriver
     items = []
