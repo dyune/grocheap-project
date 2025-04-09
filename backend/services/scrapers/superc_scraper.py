@@ -13,8 +13,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from backend.db.models import Item
-from backend.services.scrapers.utils.scraper_utils \
-    import save_products_to_db, parse_unit_price, prepare_urls, process_items_for_db
+from backend.services.scrapers.utils.scraper_utils import (
+    save_products_to_db,
+    parse_unit_price,
+    prepare_urls,
+    process_items_for_db
+)
 
 # Configure Chrome for headless mode
 ua = UserAgent()
