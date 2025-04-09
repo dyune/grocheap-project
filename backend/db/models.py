@@ -56,7 +56,7 @@ class Item(Base):
 
 class ItemPriceHistory(Base):
     __tablename__ = "item_price_history"
-    __table_args__ = (UniqueConstraint("item_id", "timestamp", name="unique_item_timestamp"),)
+    __table_args__ = (UniqueConstraint("item_id", "datetime", name="unique_item_timestamp"),)
 
     id:        Mapped[int] = mapped_column(Integer, primary_key=True, index=True, nullable=False)
     item_id:   Mapped[int] = mapped_column(Integer, ForeignKey("items.id"), nullable=False)
