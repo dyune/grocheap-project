@@ -5,17 +5,18 @@ import tracemalloc
 
 from fake_useragent import UserAgent
 from typing import List
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, PageElement
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from backend.services.scrapers.utils.scraper_utils import create_db_item, save_products_to_db, parse_unit_price
 
+from backend.db.models import Item
+from backend.services.scrapers.utils.scraper_utils \
+    import save_products_to_db, parse_unit_price, prepare_urls, process_items_for_db
 
 # Configure Chrome for headless mode
-
 ua = UserAgent()
 chrome_options = Options()
 chrome_options.add_argument(f"user-agent={ua.random}")
@@ -27,7 +28,6 @@ chrome_options.add_argument("--window-size=1920,1080")
 TEST = [
     ("https://www.superc.ca/en/aisles/fruits-vegetables", 2),
 ]
-
 
 # URLs of the SuperC pages
 BATCH_1 = [
@@ -53,36 +53,50 @@ BATCH_2 = [
 ]
 
 
-def prepare_urls(url_list):
-    res = []
-    for url in url_list:
-        res.extend(
-            iterate_through_pages(url[0], url[1])
-        )
-    return res
+def parse_product(product: PageElement):
+    brand = product.get("data-product-brand", "No brand")
+    name = product.get("data-product-name", None)
+
+    link_tag = product.find("a", class_="product-details-link")
+    product_link = "https://www.superc.ca" + link_tag.get("href") if link_tag else None
+
+    # TODO: Implement better product price tag sanitizing
+    price_tag = product.find("span", class_="price-update")
+    try:
+        price = (float(price_tag.text.strip().replace("$", "")) if price_tag else None)
+    except ValueError:
+        price = parse_unit_price(price_tag.text)
+        if not price:
+            price = None
+
+    size_tag = product.find("span", class_="head__unit-details")
+    if size_tag:
+        size = size_tag.text.strip()
+    else:
+        size_alt_tag = product.find("span", class_="unit-update")
+        size = size_alt_tag.text.strip() if size_alt_tag else None
+
+    image_tag = product.find("img", alt=True)
+    image_url = image_tag.get("src") if image_tag else None
+
+    return {
+        "name": name,
+        "brand": brand,
+        "link": product_link,
+        "image_url": image_url,
+        "size": size,
+        "price": price,
+    }
 
 
-def iterate_through_pages(link: str, max_pages: int) -> List[str]:
-    index = 1
-    pages = []
-    while index <= max_pages:
-        if index == 1:
-            pages.append(link)
-        else:
-            paginated_link = link + f"-page-{index}"
-            pages.append(paginated_link)
-        index += 1
-    return pages
-
-
-async def first_layer_parsing(url, driver):
+async def scrape_page(url, driver) -> List[Item]:
     """
     Load a page with Selenium, parse the products, and return tasks to save them.
     """
 
     # Navigate to the page
     driver.get(url)
-    db_products = []
+    items = []
 
     # Wait for the page to load fully
     try:
@@ -101,71 +115,9 @@ async def first_layer_parsing(url, driver):
 
     html = driver.page_source
     soup = BeautifulSoup(html, "html.parser")
-    products = soup.find_all("div", class_="default-product-tile")
+    all_products = soup.find_all("div", class_="default-product-tile")
 
-    for product in products:
-        try:
-            brand = product.get("data-product-brand", "No brand")
-            name = product.get("data-product-name", None)
-
-            url_tag = product.find("a", class_="product-details-link")
-            product_url = "https://www.superc.ca" + url_tag.get("href") if url_tag else "URL not found"
-
-            # TODO: Implement better product price tag sanitizing
-            price_tag = product.find("span", class_="price-update")
-            try:
-                price = (
-                    float(price_tag.text.strip().replace("$", "")) if price_tag else None
-                )
-
-            except Exception as e:
-                price = parse_unit_price(price_tag.text)
-                if not price:
-                    price = None
-
-            size_tag = product.find("span", class_="head__unit-details")
-            if size_tag:
-                size = size_tag.text.strip()
-            else:
-                size_alt_tag = product.find("span", class_="unit-update")
-                size = size_alt_tag.text.strip() if size_alt_tag else "None"
-
-            image_tag = product.find("img", alt=True)
-            image = image_tag.get("src") if image_tag else "Image not found"
-
-            # Print product details
-            # print(f"Product Brand: {brand}")
-            # print(f"Product Name: {name}")
-            # print(f"Product Price: {price}")
-            # print(f"Product Size: {size}")
-            # print(f"Product URL: {product_url}")
-            # print(f"Product Image: {image}")
-            # print("-" * 50)
-
-            # Create an asyncio task to save the product
-            if name and product_url and price is not None:
-                db_item = create_db_item(
-                    name,
-                    brand,
-                    product_url,
-                    image,
-                    size,
-                    1,
-                    price,
-                )
-                if db_item:
-                    print(db_item)
-                    db_products.append(db_item)
-                else:
-                    print(f"Missing values, couldn't save: {name}")
-
-        except Exception as e:
-            print(f"Parsing error, unable to save: {e}")
-
-        finally:
-            continue
-
-    return db_products
+    return process_items_for_db(3, all_products, parse_product)
 
 
 async def batch_insert_superc(urls):
@@ -177,16 +129,15 @@ async def batch_insert_superc(urls):
         for url in urls:
             delay = random.uniform(2, 5)  # Timeout to prevent being spotted as bot
             time.sleep(delay)
-            result = await first_layer_parsing(url, driver)
-            print(f'Found {len(result)} products')
+            result = await scrape_page(url, driver)
+            print(f'Found {len(result)} products.')
             items.extend(result)
 
         if items:
-            save_products_to_db(items)
-            print(f"Successfully saved {len(items)} products to the database.")
+            print(f"Saved these following items: {save_products_to_db(items)}")
 
     except Exception as e:
-        print(f"Error during update: {e}")
+        print(f"Error during update, could not save: {e}")
 
     finally:
         driver.quit()  # Ensure the browser is closed
@@ -194,9 +145,8 @@ async def batch_insert_superc(urls):
 
 if __name__ == "__main__":
     tracemalloc.start()
-    asyncio.run(batch_insert_superc(prepare_urls(TEST)))
     # links_1 = prepare_urls(BATCH_1)
-    # links_2 = prepare_urls(BATCH_2)
-    #
-    # asyncio.run(batch_insert_superc(links_1))
+    links_2 = prepare_urls(BATCH_2)
+
+    asyncio.run(batch_insert_superc(links_2))
     # asyncio.run(batch_insert_superc(links_2))
