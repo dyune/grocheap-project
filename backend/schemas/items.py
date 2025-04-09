@@ -1,6 +1,8 @@
 from typing import Optional
 from pydantic import BaseModel, Field
 
+# DTO classes
+
 
 class ItemCreate(BaseModel):
     name: str = Field(max_length=255, min_length=1)
