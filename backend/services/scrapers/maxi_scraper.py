@@ -11,7 +11,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
-from backend.services.scrapers.utils.scraper_utils import create_db_item, save_products_to_db
+from backend.services.scrapers.utils.scraper_utils import (
+    create_db_item,
+    save_products_to_db
+)
 
 ua = UserAgent()
 chrome_options = Options()

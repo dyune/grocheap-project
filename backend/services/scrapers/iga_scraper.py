@@ -10,8 +10,11 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
 
 from backend.db.models import Item
-from backend.services.scrapers.utils.scraper_utils \
-    import save_products_to_db, prepare_urls, process_items_for_db
+from backend.services.scrapers.utils.scraper_utils import (
+    save_products_to_db,
+    prepare_urls,
+    process_items_for_db
+)
 
 chrome_options = Options()
 chrome_options.add_argument("--headless=new")
