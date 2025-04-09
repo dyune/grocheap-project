@@ -1,29 +1,47 @@
 import os
-
+from typing import Annotated, Generator
+from fastapi import Depends
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from dotenv import load_dotenv
+from backend.db.models import Base, Item, Store
 
-from backend.db.associations import *
+# Load environment variables
+load_dotenv()
 
-# Local development DB PATH
-FILE_NAME = os.path.join("/Users/davidwang/PycharmProjects/grocheap-dev-project/backend/", "grocery_items_data.sqlite")
-# When deployed on container
-# FILE_NAME = "grocery_items_data.sqlite"
+user = os.getenv("DB_USER")
+password = os.getenv("DB_PASSWORD")
+host = os.getenv("DB_HOST")
+port = os.getenv("DB_PORT")
+database = os.getenv("DB_DATABASE")
 
-DATABASE_URL = f"sqlite:///{FILE_NAME}"
-connection_args = {"check_same_thread": False}
-engine = create_engine(DATABASE_URL, connect_args=connection_args, echo=True)
+print(user, password, host, port, database)
 
+DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
-def init_db():
-    print(SQLModel.metadata)
-    SQLModel.metadata.create_all(engine)
+# Create the SQLAlchemy engine
+engine = create_engine(DATABASE_URL, connect_args={"connect_timeout": 5})
 
-
-def get_session():
-    with Session(engine) as session:
-        yield session
+# Create a configured "SessionLocal" class
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
+def init_db() -> None:
+    # Print the tables for debugging purposes
+    print(Base.metadata.tables.items())
+    # Create all tables defined in the metadata
+    Base.metadata.create_all(engine)
+    print("Database initialized successfully")
+
+
+# Dependency to get a session for FastAPI routes
+def get_session() -> Generator[Session, None, None]:
+    db: Session = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# Annotated dependency for FastAPI routes
 SessionDep = Annotated[Session, Depends(get_session)]
-
-

@@ -4,15 +4,21 @@ import time
 import requests
 import xml.etree.ElementTree as ET
 
+from fake_useragent import UserAgent
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
-from backend.services.scrapers.db_utils import create_db_item, save_products_to_db
+from backend.services.scrapers.utils.scraper_utils import (
+    create_db_item,
+    save_products_to_db
+)
 
+ua = UserAgent()
 chrome_options = Options()
+chrome_options.add_argument(f"user-agent={ua.random}")
 chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
@@ -33,11 +39,7 @@ def fetch_all_root():
         for url in root.findall('ns:url', namespaces):
             loc = url.find('ns:loc', namespaces).text
 
-            if (loc.startswith('https://www.maxi.ca/en/food/') or
-                loc.startswith('https://www.maxi.ca/en/food/') or
-                loc.startswith('https://www.maxi.ca/en/baby/') or
-                loc.startswith('https://www.maxi.ca/en/pet-supplies/') or
-                loc.startswith('https://www.maxi.ca/en/pet-food/')
+            if (loc.startswith('https://www.maxi.ca/en/food/')
             ) and '/c/' in loc and '?navid=flyout-L3-' in loc:
                 l3_links.append(loc)
 
@@ -172,7 +174,7 @@ async def update_maxi():
             all_products.extend(products)
 
         if all_products:
-            await save_products_to_db(all_products)
+            save_products_to_db(all_products)
 
     except Exception as e:
         print(f"Error updating Maxi: {e}")
