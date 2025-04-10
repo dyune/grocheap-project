@@ -6,13 +6,6 @@ This tool allows users to fetch and compare prices for various grocery stores on
 
 Consult the [wiki](https://github.com/dyune/grocheap-project/wiki) for documentation on the project.
 
----
 
-##  **Current Features**
-- 🛒 **Scrape and Compare Grocery Prices**: Extract product name, price, availability, and discounts.
 
-## **Features Coming**
-- 🔍 **Multi-Store and Location Support**: Scrape data from multiple online grocery stores across various locations (customizable).
-- 📊 **Price Analysis**: Get price comparisons from multiple stores.
-- 🛒 **Track Prices**: Get updates on grocery prices.
 
