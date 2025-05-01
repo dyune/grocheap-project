@@ -3,11 +3,11 @@ name: CI - Test and Build Image
 on:
   push:
     branches:
-      - main
+      - master
       - 'feature/**'
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   test:
